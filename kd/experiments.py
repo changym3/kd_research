@@ -52,7 +52,7 @@ def build_config(model, dataset):
     config['trainer'] = trainer_params
     return config
 
-def run_experiment(model, dataset, gpu=None, **model_kwargs):
+def experiment(model, dataset, gpu=None, **model_kwargs):
     assert model in ['GAT', 'MLP']
     assert dataset in ['Cora']
 
@@ -88,8 +88,8 @@ if __name__ == '__main__':
     parser.add_argument('--model', type=str, default='MLP')
     parser.add_argument('--dataset', type=str, default='Cora')
     parser.add_argument('--gpu', type=int, default=1)
-
+    
     args = parser.parse_args()
-    run_experiment(args.model, args.dataset, gpu=args.gpu)
+    experiment(args.model, args.dataset, gpu=args.gpu)
 
 #  python -m kd.experiments
