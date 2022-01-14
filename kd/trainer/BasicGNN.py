@@ -1,6 +1,9 @@
+import os
 from kd.evaluator import Evaluator
 import torch
 from torch_geometric.nn.models import GAT, GCN
+
+from kd.utils.checkpoint import Checkpoint
 
 class BasicGNNTrainer:
     def __init__(self, config, dataset, device):
@@ -12,6 +15,8 @@ class BasicGNNTrainer:
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=config.trainer.lr, weight_decay=config.trainer.weight_decay)
         self.criterion = torch.nn.CrossEntropyLoss()
         self.evaluator = Evaluator()
+
+        self.checkpoint = Checkpoint(config, os.path.join(config.trainer.ckpt_path))
     
     def build_model(self, config):
         num_features = config.dataset.num_features
@@ -34,6 +39,9 @@ class BasicGNNTrainer:
             loss = self.train_epoch(self.model, self.data, self.optimizer, self.criterion)
             train_acc, val_acc, test_acc = self.eval_epoch(self.evaluator, self.data, model=self.model)
             print(f'Epoch {epoch:4d}, Loss: {loss:.4f}, Train: {train_acc:.4f}, Val: {val_acc:.4f}, Test: {test_acc:.4f}')
+            self.checkpoint.report(self.model, val_acc)
+        
+        print(f'Best Epoch {self.checkpoint.best_iter:4d}, Best Score {self.checkpoint.best_score}.')
             
     def train_epoch(self, model, data, optimizer, criterion):
         model.train()

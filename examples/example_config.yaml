@@ -1,14 +1,23 @@
 
 
 meta:
-  model_name: MLP
+  model_name: GAT
   dataset_name: Cora
 
-# model:
+model:
+  num_hiddens: 64
+  num_layers: 2
+  heads: 2
+  dropout: 0.5
+  concat: True
+  jk: last # last, cat, max, lstm,
 
 trainer:
-  ckpt_dir: .
-  version: save_test
-  gpu: 0
+  lr: 0.005
+  weight_decay: !!float 5e-4
+  epochs: 300
+
+  ckpt_path: ./ckpt/test.pt
+  gpu: 1
 
 # dataset:

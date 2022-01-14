@@ -1,6 +1,7 @@
 import json
 import torch
 from torch_geometric.datasets import Planetoid
+import torch_geometric.transforms as T
 
 from kd.configs.config import build_config
 from kd.trainer import MLPTrainer, BasicGNNTrainer
@@ -32,7 +33,7 @@ class Experiment:
 
     def build_dataset(self, dataset_name):
         if dataset_name == 'Cora':
-            dataset = Planetoid(name='Cora', root='/home/changym/dataset')
+            dataset = Planetoid(name='Cora', root='/home/changym/dataset', transform=T.NormalizeFeatures())
         return dataset
     
     def build_trainer(self, model_name):
