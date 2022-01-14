@@ -17,7 +17,7 @@ trainer:
   weight_decay: !!float 5e-4
   epochs: 300
 
-  ckpt_path: ./ckpt/test.pt
+  ckpt_dir: ./ckpt/test_GAT
   gpu: 1
 
 # dataset:

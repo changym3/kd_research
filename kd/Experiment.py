@@ -1,11 +1,10 @@
 import json
 import torch
-from torch_geometric.datasets import Planetoid
-import torch_geometric.transforms as T
+
 
 from kd.configs.config import build_config
 from kd.trainer import MLPTrainer, BasicGNNTrainer
-
+from kd.data import build_dataset
 
 
 class Experiment:
@@ -19,7 +18,7 @@ class Experiment:
         self.dataset_name = self.config.meta.dataset_name
         self.model_name = self.config.meta.model_name
         self.device = self.build_device(self.config.trainer.gpu)
-        self.dataset = self.build_dataset(self.config.meta.dataset_name)
+        self.dataset = build_dataset(self.config.meta.dataset_name)
         self.trainer = self.build_trainer(self.config.meta.model_name)
 
     def build_device(self, gpu):
@@ -30,11 +29,6 @@ class Experiment:
         elif isinstance(gpu, int):
             device = torch.device('cuda', gpu)
         return device
-
-    def build_dataset(self, dataset_name):
-        if dataset_name == 'Cora':
-            dataset = Planetoid(name='Cora', root='/home/changym/dataset', transform=T.NormalizeFeatures())
-        return dataset
     
     def build_trainer(self, model_name):
         if model_name == 'MLP':

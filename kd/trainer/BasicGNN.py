@@ -11,14 +11,14 @@ class BasicGNNTrainer:
         self.dataset = dataset
         self.data = dataset[0].to(device)
         self.device = device
-        self.model = self.build_model(config).to(device)
+        self.model = BasicGNNTrainer.build_model(config).to(device)
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=config.trainer.lr, weight_decay=config.trainer.weight_decay)
         self.criterion = torch.nn.CrossEntropyLoss()
         self.evaluator = Evaluator()
 
-        self.checkpoint = Checkpoint(config, os.path.join(config.trainer.ckpt_path))
+        self.checkpoint = Checkpoint(config, config.trainer.ckpt_dir)
     
-    def build_model(self, config):
+    def build_model(config):
         num_features = config.dataset.num_features
         num_hiddens = config.model.num_hiddens
         num_layers = config.model.num_layers
@@ -41,7 +41,8 @@ class BasicGNNTrainer:
             print(f'Epoch {epoch:4d}, Loss: {loss:.4f}, Train: {train_acc:.4f}, Val: {val_acc:.4f}, Test: {test_acc:.4f}')
             self.checkpoint.report(self.model, val_acc)
         
-        print(f'Best Epoch {self.checkpoint.best_iter:4d}, Best Score {self.checkpoint.best_score}.')
+        print(f'Best epoch {self.checkpoint.best_iter:4d}, Best Score {self.checkpoint.best_score}.')
+        print(f'The saving directory is {os.path.realpath(self.checkpoint.ckpt_dir)}')
             
     def train_epoch(self, model, data, optimizer, criterion):
         model.train()
