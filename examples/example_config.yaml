@@ -1,0 +1,14 @@
+
+
+meta:
+  model_name: MLP
+  dataset_name: Cora
+
+# model:
+
+trainer:
+  ckpt_dir: .
+  version: save_test
+  gpu: 0
+
+# dataset:
