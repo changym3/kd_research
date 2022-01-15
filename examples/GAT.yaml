@@ -14,6 +14,8 @@ trainer:
   lr: 0.005
   weight_decay: !!float 5e-4
   epochs: 300
+  verbose: True
 
   ckpt_dir: ./ckpt/test_GAT
+  # ckpt_dir: ~
   gpu: 1

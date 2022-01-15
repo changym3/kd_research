@@ -1,5 +1,6 @@
 from distutils.command.config import config
 import os
+import shutil
 import torch
 
 
@@ -8,29 +9,28 @@ class Checkpoint():
         self.config = config
         self.ckpt_dir = ckpt_dir
         self.best_score = None
-        self.best_iter = None
-        self.iter_cnt = 0
+        self.best_epoch = None
         self.mode = mode
         
         self.prepare_dir(ckpt_dir)
 
     def prepare_dir(self, ckpt_dir):
-        if not os.path.exists(ckpt_dir):
-            os.makedirs(ckpt_dir)
+        if os.path.exists(ckpt_dir):
+            shutil.rmtree(ckpt_dir)
+        os.makedirs(ckpt_dir)
 
-    def report(self, model, score):
-        self.iter_cnt += 1
+    def report(self, epoch, model, score):
         if self.best_score is None:
-            self.save_and_update(model, score)
+            self.save_and_update(epoch, model, score)
         else:
             if self.mode == 'max' and score > self.best_score:
-                self.save_and_update(model, score)
+                self.save_and_update(epoch, model, score)
             elif self.mode == 'min' and score < self.best_score:
-                self.save_and_update(model, score)            
+                self.save_and_update(epoch, model, score)            
 
-    def save_and_update(self, model, score):
+    def save_and_update(self, epoch, model, score):
         self.best_score = score
-        self.best_iter = self.iter_cnt
+        self.best_epoch = epoch
         self.save(model)
     
     def save(self, model):

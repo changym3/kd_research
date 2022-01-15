@@ -1,4 +1,5 @@
 import json
+import os
 import torch
 
 
@@ -45,6 +46,10 @@ class Experiment:
         # assert dataset in ['Cora']
 
         self.trainer.fit()
+        self.trainer.logger.report()
+        if self.trainer.checkpoint:
+            print(f'The model is at epoch {self.trainer.checkpoint.best_epoch}, the saving directory is {os.path.realpath(self.trainer.checkpoint.ckpt_dir)}')
+
 
         print(json.dumps(self.config, indent=4))
 

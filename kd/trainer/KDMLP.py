@@ -1,8 +1,10 @@
-from unittest import makeSuite
-from kd.evaluator import Evaluator
 import torch
 import torch.nn.functional as F
 from torch_geometric.nn.models import MLP
+
+from kd.utils.evaluator import Evaluator
+from kd.utils.logger import Logger
+
 
 class KDMLPTrainer:
     def __init__(self, cfg, dataset, device):
@@ -14,6 +16,7 @@ class KDMLPTrainer:
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=cfg.trainer.lr, weight_decay=cfg.trainer.weight_decay)
         self.criterion = torch.nn.CrossEntropyLoss()
         self.evaluator = Evaluator()
+        self.logger = Logger()
 
         self.kd_cfg = cfg.trainer.kd
         self.soft_label = self.setup_softlabel(self.kd_cfg.softlabel_path, self.device)
@@ -33,10 +36,10 @@ class KDMLPTrainer:
         return model
 
     def fit(self):
-        for epoch in range(1, self.cfg.trainer.epochs):
+        for epoch in range(self.cfg.trainer.epochs):
             loss = self.train_epoch(self.model, self.data, self.optimizer, self.criterion)
             train_acc, val_acc, test_acc = self.eval_epoch(self.evaluator, self.data, model=self.model)
-            print(f'Epoch {epoch:4d}, Loss: {loss:.4f}, Train: {train_acc:.4f}, Val: {val_acc:.4f}, Test: {test_acc:.4f}')
+            self.logger.add_result(epoch, loss, train_acc, val_acc, test_acc, verbose=self.cfg.trainer.verbose)
             
     def train_epoch(self, model, data, optimizer, criterion):
         model.train()

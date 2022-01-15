@@ -7,7 +7,7 @@ import torch
 
 from kd.trainer import BasicGNNTrainer
 from kd.data import build_dataset
-from kd.evaluator import Evaluator
+from kd.utils.evaluator import Evaluator
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -35,3 +35,5 @@ if __name__ == '__main__':
     
     pred_acc = evaluator.eval(y_pred, data.y)['acc']
     print(f'The predictions have the accuracy of {pred_acc:.4f}.')
+
+# python generate_softlabels.py --ckpt_dir ./ckpt/test_GAT

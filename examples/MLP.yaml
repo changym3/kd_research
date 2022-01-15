@@ -15,6 +15,7 @@ trainer:
   lr: 0.005
   weight_decay: !!float 5e-4
   epochs: 300
+  verbose: True
 
   gpu: 1
 

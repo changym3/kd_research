@@ -1,48 +1,52 @@
 import os
-from kd.evaluator import Evaluator
 import torch
 from torch_geometric.nn.models import GAT, GCN
 
 from kd.utils.checkpoint import Checkpoint
+from kd.utils.evaluator import Evaluator
+from kd.utils.logger import Logger
 
 class BasicGNNTrainer:
-    def __init__(self, config, dataset, device):
-        self.config = config
+    def __init__(self, cfg, dataset, device):
+        self.cfg = cfg
         self.dataset = dataset
         self.data = dataset[0].to(device)
         self.device = device
-        self.model = BasicGNNTrainer.build_model(config).to(device)
-        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=config.trainer.lr, weight_decay=config.trainer.weight_decay)
+        self.model = BasicGNNTrainer.build_model(cfg).to(device)
+        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=cfg.trainer.lr, weight_decay=cfg.trainer.weight_decay)
         self.criterion = torch.nn.CrossEntropyLoss()
         self.evaluator = Evaluator()
+        self.logger = Logger()
 
-        self.checkpoint = Checkpoint(config, config.trainer.ckpt_dir)
+        if self.cfg.trainer.get('ckpt_dir', None) is None:
+            self.checkpoint = None
+        else:
+            self.checkpoint = Checkpoint(cfg, cfg.trainer.ckpt_dir)
     
-    def build_model(config):
-        num_features = config.dataset.num_features
-        num_hiddens = config.model.num_hiddens
-        num_layers = config.model.num_layers
-        num_classes = config.dataset.num_classes
-        dropout = config.model.dropout
-        jk = config.model.jk
+    def build_model(cfg):
+        num_features = cfg.dataset.num_features
+        num_hiddens = cfg.model.num_hiddens
+        num_layers = cfg.model.num_layers
+        num_classes = cfg.dataset.num_classes
+        dropout = cfg.model.dropout
+        jk = cfg.model.jk
 
-        if config.meta.model_name == 'GAT':
+        if cfg.meta.model_name == 'GAT':
             model = GAT(num_features, num_hiddens, num_layers, num_classes, 
-                jk=jk, heads=config.model.heads, dropout=dropout)
-        elif config.meta.model_name == 'GCN':
+                jk=jk, heads=cfg.model.heads, dropout=dropout)
+        elif cfg.meta.model_name == 'GCN':
             model = GCN(num_features, num_hiddens, num_layers, num_classes,
                         dropout=dropout, jk=jk)
         return model
 
     def fit(self):
-        for epoch in range(1, self.config.trainer.epochs):
+        for epoch in range(self.cfg.trainer.epochs):
             loss = self.train_epoch(self.model, self.data, self.optimizer, self.criterion)
             train_acc, val_acc, test_acc = self.eval_epoch(self.evaluator, self.data, model=self.model)
-            print(f'Epoch {epoch:4d}, Loss: {loss:.4f}, Train: {train_acc:.4f}, Val: {val_acc:.4f}, Test: {test_acc:.4f}')
-            self.checkpoint.report(self.model, val_acc)
-        
-        print(f'Best epoch {self.checkpoint.best_iter:4d}, Best Score {self.checkpoint.best_score}.')
-        print(f'The saving directory is {os.path.realpath(self.checkpoint.ckpt_dir)}')
+            self.logger.add_result(epoch, loss, train_acc, val_acc, test_acc, verbose=self.cfg.trainer.verbose)
+            if self.checkpoint:
+                self.checkpoint.report(epoch, self.model, val_acc)
+
             
     def train_epoch(self, model, data, optimizer, criterion):
         model.train()
