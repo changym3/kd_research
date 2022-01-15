@@ -1,0 +1,21 @@
+
+
+meta:
+  model_name: MLP
+  dataset_name: Cora
+
+model:
+  num_hiddens: 64
+  num_layers: 4
+  dropout: 0.5
+  batch_norm: True
+  kd_alpha: 0.9
+
+trainer:
+  lr: 0.005
+  weight_decay: !!float 5e-4
+  epochs: 300
+
+  gpu: 1
+
+# dataset:

@@ -5,6 +5,7 @@ import torch
 from kd.configs.config import build_config
 from kd.trainer import MLPTrainer, BasicGNNTrainer
 from kd.data import build_dataset
+from kd.trainer.KDMLP import KDMLPTrainer
 
 
 class Experiment:
@@ -35,6 +36,8 @@ class Experiment:
             trainer = MLPTrainer(self.config, self.dataset, self.device)
         elif model_name in ['GAT', 'GCN']:
             trainer = BasicGNNTrainer(self.config, self.dataset, self.device)
+        elif model_name == 'KDMLP':
+            trainer = KDMLPTrainer(self.config, self.dataset, self.device)
         return trainer
 
     def run(self):

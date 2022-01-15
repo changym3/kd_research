@@ -15,8 +15,8 @@ def get_default_config(model, dataset):
         'model_name': model,
         'dataset_name': dataset
     }
-    config['dataset'] = dataset_params[dataset]
-    config['model'] = model_params[model]
+    config['dataset'] = dataset_params.get(dataset, None)
+    config['model'] = model_params.get(model, None)
     config['trainer'] = trainer_params
     return config
 

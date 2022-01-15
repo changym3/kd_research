@@ -1,0 +1,26 @@
+
+
+meta:
+  model_name: KDMLP
+  dataset_name: Cora
+
+model:
+  num_hiddens: 64
+  num_layers: 4
+  dropout: 0.5
+  batch_norm: True
+
+trainer:
+  lr: 0.005
+  weight_decay: !!float 5e-4
+  epochs: 300
+
+  kd:
+    softlabel_path: ./ckpt/test_GAT/pred.pt
+    alpha: 1
+    temperature: 10
+
+  # ckpt_dir: ./ckpt/test_GAT
+  gpu: 1
+
+# dataset:
