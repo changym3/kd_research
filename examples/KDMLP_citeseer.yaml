@@ -1,5 +1,8 @@
+
+
 meta:
-  model_name: MLP
+  model_name: KDModel
+  student_name: MLP
 
 model:
   num_hiddens: 256
@@ -13,6 +16,12 @@ trainer:
   epochs: 300
   verbose: True
 
+  kd:
+    softlabel_path: ./ckpt/test_GAT/pred.pt
+    alpha: 0.8
+    temperature: 10
+
+  # ckpt_dir: ./ckpt/test_GAT
   gpu: 1
 
 # dataset:

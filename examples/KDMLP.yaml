@@ -5,8 +5,8 @@ meta:
   student_name: MLP
 
 model:
-  num_hiddens: 64
-  num_layers: 4
+  num_hiddens: 256
+  num_layers: 3
   dropout: 0.5
   batch_norm: True
 
@@ -18,7 +18,7 @@ trainer:
 
   kd:
     softlabel_path: ./ckpt/test_GAT/pred.pt
-    alpha: 1
+    alpha: 0.95
     temperature: 10
 
   # ckpt_dir: ./ckpt/test_GAT

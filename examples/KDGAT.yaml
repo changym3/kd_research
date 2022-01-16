@@ -5,9 +5,9 @@ meta:
   student_name: GAT
 
 model:
-  num_hiddens: 64
+  num_hiddens: 256
   num_layers: 2
-  heads: 2
+  heads: 4
   dropout: 0.5
   concat: True
   jk: last

@@ -33,7 +33,10 @@ if __name__ == '__main__':
     torch.save({'pred': y_pred}, pred_path)
     print(f'Save predictions into file {pred_path}.')
     
-    pred_acc = evaluator.eval(y_pred, data.y)['acc']
-    print(f'The predictions have the accuracy of {pred_acc:.4f}.')
+    all_acc = evaluator.eval(y_pred, data.y)['acc']
+    train_acc = evaluator.eval(y_pred[data.train_mask], data.y[data.train_mask])['acc']
+    val_acc = evaluator.eval(y_pred[data.val_mask], data.y[data.val_mask])['acc']
+    test_acc = evaluator.eval(y_pred[data.test_mask], data.y[data.test_mask])['acc']
+    print(f'The Prediction, All: {all_acc:.4f}, Train: {train_acc:.4f}, Val: {val_acc:.4f}, Test: {test_acc:.4f}')
 
 # python generate_softlabels.py --ckpt_dir ./ckpt/test_GAT
