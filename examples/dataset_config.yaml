@@ -1,0 +1,19 @@
+Cora: 
+  name: Cora
+  num_features: 1433
+  num_classes: 7
+
+CiteSeer: 
+  name: CiteSeer
+  num_features: 3703
+  num_classes: 6
+
+PubMed:
+  name: PubMed
+  num_features: 500
+  num_classes: 3
+
+ogbn-arxiv:
+  name: ogbn-arxiv
+  num_features: 128
+  num_classes: 40

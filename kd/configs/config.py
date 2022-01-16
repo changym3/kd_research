@@ -4,13 +4,18 @@ from easydict import EasyDict
 import yaml
 
 
+def load_config(cfg_path):
+    cfg_path = os.path.realpath(cfg_path)
+    with open(cfg_path) as f:
+        config = EasyDict(yaml.load(f, Loader=yaml.FullLoader))
+    return config
+
 def get_default_config(model, dataset):
     config = EasyDict()
     config_dir = os.path.dirname(__file__)
-    dataset_params = EasyDict(yaml.load(open(os.path.join(config_dir, 'defaults/dataset_config.yaml')), Loader=yaml.FullLoader))
-    model_params = EasyDict(yaml.load(open(os.path.join(config_dir, 'defaults/model_config.yaml')), Loader=yaml.FullLoader))
-    trainer_params = EasyDict(yaml.load(open(os.path.join(config_dir, 'defaults/trainer_config.yaml')), Loader=yaml.FullLoader))
-    
+    dataset_params = load_config(os.path.join(config_dir, 'defaults/dataset_config.yaml'))
+    model_params = load_config(os.path.join(config_dir, 'defaults/model_config.yaml'))
+    trainer_params = load_config(os.path.join(config_dir, 'defaults/trainer_config.yaml'))
     config['meta'] = {
         'model_name': model,
         'dataset_name': dataset
@@ -20,10 +25,8 @@ def get_default_config(model, dataset):
     config['trainer'] = trainer_params
     return config
 
-
 def build_config(cfg_path):
-    cfg_path = os.path.realpath(cfg_path)
-    config = EasyDict(yaml.load(open(cfg_path), Loader=yaml.FullLoader))
+    config = load_config(cfg_path)
     base_config = get_default_config(model=config.meta.model_name, dataset=config.meta.dataset_name)
     update_config(base_config, config)
     return base_config

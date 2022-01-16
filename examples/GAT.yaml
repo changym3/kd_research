@@ -1,6 +1,5 @@
 meta:
   model_name: GAT
-  dataset_name: Cora
 
 model:
   num_hiddens: 64

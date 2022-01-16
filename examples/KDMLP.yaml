@@ -3,7 +3,6 @@
 meta:
   model_name: KDModel
   student_name: MLP
-  dataset_name: Cora
 
 model:
   num_hiddens: 64

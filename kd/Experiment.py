@@ -1,27 +1,24 @@
 import json
 import os
-from tabnanny import verbose
+from copy import deepcopy
 import torch
 
-
-from kd.configs.config import build_config
 from kd.trainer import MLPTrainer, BasicGNNTrainer, KDModelTrainer
 from kd.data import build_dataset
 
 class Experiment:
-    def __init__(self, config=None, cfg_path=None, n_runs=1):
-        assert config is not None or cfg_path is not None
-        if config is None:
-            self.config = build_config(cfg_path)
-        else:
-            self.config = config
-
-        self.dataset_name = self.config.meta.dataset_name
-        self.model_name = self.config.meta.model_name
+    def __init__(self, model_cfg, dataset_cfg, n_runs=1):
+        self.config = self.prepare_cfg(model_cfg, dataset_cfg)
         self.device = self.build_device(self.config.trainer.gpu)
         self.dataset = build_dataset(self.config.meta.dataset_name)
         # self.trainer = self.build_trainer(self.config.meta.model_name)
         self.n_runs = n_runs
+
+    def prepare_cfg(self, model_cfg, dataset_cfg):
+        cfg = deepcopy(model_cfg)
+        cfg.meta.dataset_name = dataset_cfg.name
+        cfg.dataset = dataset_cfg
+        return cfg
 
     def build_device(self, gpu):
         if gpu is None:
