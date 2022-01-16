@@ -8,9 +8,10 @@ if __name__ == '__main__':
     # parser.add_argument('--gpu', type=int, default=1)
 
     parser.add_argument('--cfg_path', type=str, default='./examples/example_config.yaml')
+    parser.add_argument('--n_runs', type=int, default=1)
 
     args = parser.parse_args()
-    expt = Experiment(cfg_path=args.cfg_path)
+    expt = Experiment(cfg_path=args.cfg_path, n_runs=args.n_runs)
     expt.run()
 
     # experiment(args.model, args.dataset, gpu=args.gpu, cfg_path=args.cfg_path)
