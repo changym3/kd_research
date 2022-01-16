@@ -1,12 +1,12 @@
 import torch
 import torch.nn.functional as F
-from torch_geometric.nn.models import MLP
+from torch_geometric.nn.models import MLP, GAT
 
 from kd.utils.evaluator import Evaluator
 from kd.utils.logger import Logger
 
 
-class KDMLPTrainer:
+class KDModelTrainer:
     def __init__(self, cfg, dataset, device):
         self.cfg = cfg
         self.dataset = dataset
@@ -25,26 +25,40 @@ class KDMLPTrainer:
 
     def build_model(self, cfg):
         num_features = cfg.dataset.num_features
-        num_hiddens = cfg.model.num_hiddens
-        num_layers = cfg.model.num_layers
         num_classes = cfg.dataset.num_classes
-        dropout = cfg.model.dropout
-        batch_norm = cfg.model.batch_norm
+        
+        cfgm = cfg.model
+        num_hiddens = cfgm.num_hiddens
+        num_layers = cfgm.num_layers
+        dropout = cfgm.dropout
 
-        channel_list = [num_features, *([num_hiddens] * (num_layers - 1)), num_classes]
-        model = MLP(channel_list, dropout, batch_norm=batch_norm)
+        if cfg.meta.student_name == 'MLP':
+            batch_norm = cfgm.batch_norm
+            channel_list = [num_features, *([num_hiddens] * (num_layers - 1)), num_classes]
+            model = MLP(channel_list, dropout, batch_norm=batch_norm)
+        elif cfg.meta.student_name == 'GAT':
+            jk = cfgm.jk
+            heads = cfgm.heads
+            model = GAT(num_features, num_hiddens, num_layers, num_classes, 
+                jk=jk, heads=heads, dropout=dropout)
         return model
+
+    def model_forward(self, model, data):
+        if self.cfg.meta.student_name == 'MLP':
+            return model(data.x)
+        else:
+            return model(data.x, data.edge_index)
 
     def fit(self):
         for epoch in range(self.cfg.trainer.epochs):
             loss = self.train_epoch(self.model, self.data, self.optimizer, self.criterion)
             train_acc, val_acc, test_acc = self.eval_epoch(self.evaluator, self.data, model=self.model)
             self.logger.add_result(epoch, loss, train_acc, val_acc, test_acc, verbose=self.cfg.trainer.verbose)
-            
+    
     def train_epoch(self, model, data, optimizer, criterion):
         model.train()
         optimizer.zero_grad()
-        out = model(data.x)
+        out = self.model_forward(model, data)
         # loss = self.kd_module.loss(out[data.train_mask], self.soft_label[data.train_mask], data.y[data.train_mask])
         loss = self.kd_module.loss(out, self.soft_label, data.y, data.train_mask, data.val_mask)
         # loss = criterion(out[data.train_mask], data.y[data.train_mask].view(-1))
@@ -57,7 +71,7 @@ class KDMLPTrainer:
         assert out is not None or model is not None
         if out is None:
             model.eval()
-            out = model(data.x)
+            out = self.model_forward(model, data)
         train_acc = evaluator.eval(out[data.train_mask], data.y[data.train_mask])['acc']
         val_acc = evaluator.eval(out[data.val_mask], data.y[data.val_mask])['acc']
         test_acc = evaluator.eval(out[data.test_mask], data.y[data.test_mask])['acc']

@@ -2,14 +2,16 @@
 
 meta:
   model_name: KDModel
-  student_name: MLP
+  student_name: GAT
   dataset_name: Cora
 
 model:
   num_hiddens: 64
-  num_layers: 4
+  num_layers: 2
+  heads: 2
   dropout: 0.5
-  batch_norm: True
+  concat: True
+  jk: last
 
 trainer:
   lr: 0.005
@@ -19,8 +21,8 @@ trainer:
 
   kd:
     softlabel_path: ./ckpt/test_GAT/pred.pt
-    alpha: 1
-    temperature: 10
+    alpha: 0.8
+    temperature: 5
 
   # ckpt_dir: ./ckpt/test_GAT
   gpu: 1

@@ -4,10 +4,8 @@ import torch
 
 
 from kd.configs.config import build_config
-from kd.trainer import MLPTrainer, BasicGNNTrainer
+from kd.trainer import MLPTrainer, BasicGNNTrainer, KDModelTrainer
 from kd.data import build_dataset
-from kd.trainer.KDMLP import KDMLPTrainer
-
 
 class Experiment:
     def __init__(self, config=None, cfg_path=None):
@@ -37,8 +35,8 @@ class Experiment:
             trainer = MLPTrainer(self.config, self.dataset, self.device)
         elif model_name in ['GAT', 'GCN']:
             trainer = BasicGNNTrainer(self.config, self.dataset, self.device)
-        elif model_name == 'KDMLP':
-            trainer = KDMLPTrainer(self.config, self.dataset, self.device)
+        elif model_name == 'KDModel':
+            trainer = KDModelTrainer(self.config, self.dataset, self.device)
         return trainer
 
     def run(self):
@@ -47,8 +45,9 @@ class Experiment:
 
         self.trainer.fit()
         self.trainer.logger.report()
-        if self.trainer.checkpoint:
+        if hasattr(self.trainer, 'checkpoint') and self.trainer.checkpoint:
             print(f'The model is at epoch {self.trainer.checkpoint.best_epoch}, the saving directory is {os.path.realpath(self.trainer.checkpoint.ckpt_dir)}')
+
 
 
         print(json.dumps(self.config, indent=4))
