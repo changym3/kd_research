@@ -17,11 +17,14 @@ trainer:
   verbose: True
 
   kd:
-    softlabel_path: ./ckpt/test_GAT/pred.pt
-    alpha: 0.95
-    temperature: 10
+    knowledge_path: ./ckpt/test_GAT/knowledge.pt
+    type: feat     # none, soft, feat
+    # alpha: 0.95
+    alpha: 20
+    beta: 1
+    temperature: 20
 
   # ckpt_dir: ./ckpt/test_GAT
-  gpu: 1
+  gpu: 0
 
 # dataset:

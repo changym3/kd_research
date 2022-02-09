@@ -6,31 +6,54 @@ from torch import Tensor
 import torch.nn.functional as F
 
 
-def _get_gnn_knowledge(self, x, edge_index, *args, **kwargs):
+def _get_gnn_knowledge(model, x, edge_index, *args, **kwargs):
     """"""
+    knos: List[Tensor]= []
     xs: List[Tensor] = []
-    for i in range(self.num_layers):
-        x = self.convs[i](x, edge_index, *args, **kwargs)
-        if (i == self.num_layers - 1 and self.has_out_channels
-                and self.jk_mode == 'last'):
+    for i in range(model.num_layers):
+        x = model.convs[i](x, edge_index, *args, **kwargs)
+        if (i == model.num_layers - 1 and model.has_out_channels
+                and model.jk_mode == 'last'):
             break
-        if self.norms is not None:
-            x = self.norms[i](x)
-        if self.act is not None:
-            x = self.act(x)
-        x = F.dropout(x, p=self.dropout, training=self.training)
-        xs.append(x)
-    x = self.jk(xs) if hasattr(self, 'jk') else x
-    x = self.lin(x) if hasattr(self, 'lin') else x
-    xs.append(x)
-    xs = [x.cpu() for x in xs]
-    return xs
+        if model.norms is not None:
+            x = model.norms[i](x)
+        knos.append(x)
+        if model.act is not None:
+            x = model.act(x)
+        x = F.dropout(x, p=model.dropout, training=model.training)
+        if hasattr(model, 'jk'):
+            xs.append(x)
+    x = model.jk(xs) if hasattr(model, 'jk') else x
+    x = model.lin(x) if hasattr(model, 'lin') else x
+    knos.append(x)
+    return knos
 
 
-def get_knowledge(model, dataset, device):
+def _get_mlp_knowledge(model, x):
+    """"""
+    knos: List[Tensor] = []
+    x = model.lins[0](x)
+    knos.append(x)
+    for lin, norm in zip(model.lins[1:], model.norms):
+        if model.relu_first:
+            x = x.relu_()
+        x = norm(x)
+        if not model.relu_first:
+            x = x.relu_()
+        x = F.dropout(x, p=model.dropout, training=model.training)
+        x = lin.forward(x)
+        knos.append(x)
+    return knos
+
+
+def get_knowledge(model, dataset, device, ktype='GNN'):
     model = model.to(device)
     data = dataset[0].to(device)
     with torch.no_grad():
         model.eval()
-        kno = _get_gnn_knowledge(model, data.x, data.edge_index)
+        if ktype == 'GNN':
+            kno = _get_gnn_knowledge(model, data.x, data.edge_index)
+        elif ktype == 'MLP':
+            kno = _get_mlp_knowledge(model, data.x)
+        kno = [x.cpu() for x in kno]
     return kno
