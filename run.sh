@@ -1,7 +1,12 @@
+# MLP
+
+
 # GAT
-python run_experiments.py --model_cfg examples/GAT.yaml --dataset Cora
-python run_experiments.py --model_cfg examples/GAT.yaml --dataset CiteSeer
-python run_experiments.py --model_cfg examples/GAT.yaml --dataset PubMed
+python run_experiments.py --model_cfg examples/GAT.yaml --dataset Cora --n_runs 3
+python run_experiments.py --model_cfg examples/GAT.yaml --dataset CiteSeer --n_runs 3
+python run_experiments.py --model_cfg examples/GAT.yaml --dataset PubMed --n_runs 3
+python run_experiments.py --model_cfg examples/GAT.yaml --dataset ogbn-arxiv --n_runs 3
+
 
 
 # KD-GAT

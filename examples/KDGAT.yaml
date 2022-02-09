@@ -24,6 +24,6 @@ trainer:
     temperature: 5
 
   # ckpt_dir: ./ckpt/test_GAT
-  gpu: 1
+  gpu: 0
 
 # dataset:

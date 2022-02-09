@@ -17,4 +17,4 @@ trainer:
 
   ckpt_dir: ./ckpt/test_GAT
   # ckpt_dir: ~
-  gpu: 1
+  gpu: 0
