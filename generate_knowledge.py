@@ -34,7 +34,7 @@ if __name__ == '__main__':
     evaluator = Evaluator()
     data = dataset[0]
     y_pred = knowledge[-1]
-    print(data.y)
+
     all_acc = evaluator.eval(y_pred, data.y)['acc']
     train_acc = evaluator.eval(y_pred[data.train_mask], data.y[data.train_mask])['acc']
     val_acc = evaluator.eval(y_pred[data.val_mask], data.y[data.val_mask])['acc']

@@ -19,8 +19,8 @@ class KDModelTrainer:
         self.logger = Logger()
 
         self.kd_cfg = cfg.trainer.kd
+        self.kd_module = KDModule(self.kd_cfg)
         self.knowledge = self.setup_knowledge(self.kd_cfg.knowledge_path, self.device)
-        self.kd_module = KDModule(self.kd_cfg.temperature, self.kd_cfg.alpha, self.kd_cfg.beta)
 
 
     def build_model(self, cfg):
@@ -64,7 +64,7 @@ class KDModelTrainer:
             self.logger.add_result(epoch, loss, train_acc, val_acc, test_acc, verbose=self.cfg.trainer.verbose)
 
     def knowledge_loss(self, outs, data):
-        loss = self.kd_module.loss(outs, self.knowledge, data.y, data.train_mask, data.val_mask)
+        loss = self.kd_module.loss(outs, self.knowledge, data.y, data.train_mask, data.val_mask, data.test_mask)
         return loss
     
     def train_epoch(self, model, data, optimizer):
@@ -95,24 +95,41 @@ class KDModelTrainer:
 
 
 class KDModule:
-    def __init__(self, temperature, alpha, beta) -> None:
-        self.T = temperature
-        self.alpha = alpha
-        self.beta = beta
+    def __init__(self, cfg) -> None:
+        self.T = cfg.temperature
+        self.alpha = cfg.alpha
+        self.beta = cfg.beta
+        self.gamma = cfg.gamma
+        self.method = cfg.method
+        self.mask = cfg.mask
 
-    def loss(self, outs, knowledge, y, train_mask, val_mask):
+    def loss(self, outs, knowledge, y, train_mask, val_mask, test_mask):
+        assert len(train_mask) == len(val_mask) and len(val_mask) == len(test_mask)
+        if self.mask == 'all':
+            mask = torch.ones_like(train_mask, dtype=torch.bool)
+        elif self.mask == 'train_val':
+            mask = train_mask | val_mask
+        elif self.mask == 'train_val_test':
+            mask = train_mask | val_mask | test_mask
+        else:
+            raise Exception('The setting of `mask` is not supported')
+        
         ce_loss = F.cross_entropy(outs[-1][train_mask], y[train_mask])
 
-        tv_mask = torch.logical_or(train_mask, val_mask)
-        kl_loss = self.soft_loss(outs[-1][tv_mask], knowledge[-1][tv_mask])
-        hidden_loss = self.hidden_loss(outs[-2][tv_mask], knowledge[-2][tv_mask])
+        if self.method == 'none':
+            loss = self.alpha * ce_loss
+        
+        elif self.method == 'soft':
+            kl_loss = self.soft_loss(outs[-1][mask], knowledge[-1][mask])
+            loss = self.alpha * ce_loss + self.beta * kl_loss
+            print(f'loss = {loss:.4f}, ce_loss = {ce_loss:.4f} ({ce_loss / loss:.2%}), kl_loss = {kl_loss:.4f} ({self.beta * kl_loss / loss:.2%})')
+        
+        elif self.method == 'feat':
+            kl_loss = self.soft_loss(outs[-1][mask], knowledge[-1][mask])
+            hidden_loss = self.hidden_loss(outs[-2][mask], knowledge[-2][mask])
+            loss = self.alpha * ce_loss + self.beta * kl_loss + self.gamma * hidden_loss
+            print(f'loss = {loss:.4f}, ce_loss = {ce_loss:.4f} ({self.alpha * ce_loss / loss:.2%}), kl_loss = {kl_loss:.4f} ({self.beta * kl_loss / loss:.2%}), hidden_loss = {hidden_loss:.4f} ({self.gamma * hidden_loss / loss:.2%})')
 
-        loss = ce_loss + self.alpha * kl_loss + self.beta * hidden_loss
-        ce_pct = ce_loss / loss
-        kl_pct = self.alpha * kl_loss / loss
-        hd_pct = self.beta * hidden_loss / loss
-        # loss = (1 - self.alpha) * ce_loss + self.alpha * kl_loss
-        print(f'loss = {loss:.4f}, ce_loss = {ce_loss:.4f} ({ce_pct:.2%}), kl_loss = {kl_loss:.4f} ({kl_pct:.2%}), hidden_loss = {hidden_loss:.4f} ({hd_pct:.2%})')
         return loss
 
     def soft_loss(self, logits, soft_y):
