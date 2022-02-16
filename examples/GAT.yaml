@@ -1,5 +1,10 @@
 meta:
   model_name: GAT
+  dataset_name: ~
+
+dataset:
+  num_features: ~
+  num_classes: ~
 
 model:
   num_hiddens: 256

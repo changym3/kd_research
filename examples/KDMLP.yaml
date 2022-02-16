@@ -3,6 +3,11 @@
 meta:
   model_name: KDModel
   student_name: MLP
+  dataset_name: ~
+
+dataset:
+  num_features: ~
+  num_classes: ~
 
 model:
   num_hiddens: 256
@@ -15,6 +20,8 @@ trainer:
   weight_decay: !!float 5e-4
   epochs: 300
   verbose: True
+  # ckpt_dir: ./examples/ckpt/test_GAT
+  gpu: 0
 
   kd:
     knowledge_path: ./examples/ckpt/test_GAT/knowledge.pt
@@ -23,8 +30,3 @@ trainer:
     alpha: 1
     beta: 1.
     temperature: 20
-
-  # ckpt_dir: ./examples/ckpt/test_GAT
-  gpu: 0
-
-# dataset:

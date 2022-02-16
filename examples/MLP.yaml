@@ -1,5 +1,10 @@
 meta:
   model_name: MLP
+  dataset_name: ~
+
+dataset:
+  num_features: ~
+  num_classes: ~
 
 model:
   num_hiddens: 256
@@ -14,5 +19,3 @@ trainer:
   verbose: True
 
   gpu: 1
-
-# dataset:

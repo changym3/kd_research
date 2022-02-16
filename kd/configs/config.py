@@ -1,4 +1,5 @@
 import os
+import os.path as osp
 import copy
 from easydict import EasyDict
 import yaml
@@ -10,9 +11,11 @@ def load_config(cfg_path):
         config = EasyDict(yaml.load(f, Loader=yaml.FullLoader))
     return config
 
-def prepare_experiment_cfg(model_cfg, dataset_cfg):
+def prepare_experiment_cfg(model_cfg, dataset):
     cfg = copy.deepcopy(model_cfg)
-    cfg.meta.dataset_name = dataset_cfg.name
+    dataset_cfg_path = osp.join(osp.dirname(__file__), 'dataset_config.yaml')
+    dataset_cfg = load_config(dataset_cfg_path)[dataset]
+    cfg.meta.dataset_name = dataset
     cfg.dataset = dataset_cfg
     return cfg
 

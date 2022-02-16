@@ -14,7 +14,7 @@ class Tuner:
 
     def adjust_cfg(self, cfg):
         cfg = copy.deepcopy(cfg)
-        cfg.trainer.checkpoint = False
+        cfg.trainer.ckpt_dir = None
         cfg.trainer.verbose = False
         return cfg
     
@@ -24,14 +24,19 @@ class Tuner:
         for _ in range(self.n_repeats):
             trainer = exp.run_single()
             train1, best_idx, train, valid, test = trainer.logger.report()
-            res.append(test)
-        avg_res = np.array(res).mean()
-        return avg_res
+            res.append([train1, best_idx, train, valid, test])
+        res = np.array(res)
+        return res
 
     def objective(self, trial):
         cfg = self.sugggestor(trial, self.cfg)
-        test_acc = self.experiment(cfg)
-        return test_acc
+        res = self.experiment(cfg)
+        val_acc = res[:, 3].mean()
+        trial.set_user_attr("val_acc", val_acc)
+        trial.set_user_attr("val_std", res[:, 3].std())
+        trial.set_user_attr("test_acc", res[:, 4].mean())
+        trial.set_user_attr("test_std", res[:, 4].std())
+        return val_acc
 
     def tune(self):
         study = optuna.create_study(direction='maximize')

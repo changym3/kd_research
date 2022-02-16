@@ -20,8 +20,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     model_cfg = load_config(args.model_cfg)
-    dataset_cfg = load_config('./examples/dataset_config.yaml')[args.dataset]
-    exp_cfg= prepare_experiment_cfg(model_cfg, dataset_cfg)
+    exp_cfg= prepare_experiment_cfg(model_cfg, args.dataset)
 
     expt = Experiment(exp_cfg, n_runs=args.n_runs)
     expt.run()

@@ -34,8 +34,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     model_cfg = load_config(args.model_cfg)
-    dataset_cfg = load_config('./examples/dataset_config.yaml')[args.dataset]
-    exp_cfg= prepare_experiment_cfg(model_cfg, dataset_cfg)
+    exp_cfg= prepare_experiment_cfg(model_cfg, args.dataset)
 
     dataset = build_dataset(exp_cfg.meta.dataset_name)
     tuner = Tuner(exp_cfg, suggestor, args.n_trials, n_repeats=args.n_repeats, dataset=dataset)
