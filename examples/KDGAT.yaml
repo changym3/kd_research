@@ -19,7 +19,7 @@ trainer:
   verbose: True
 
   kd:
-    knowledge_path: ./ckpt/test_GAT/knowledge.pt
+    knowledge_path: ./examples/ckpt/test_GAT/knowledge.pt
     alpha: 0.8
     temperature: 5
 

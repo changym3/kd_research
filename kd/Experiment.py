@@ -1,24 +1,19 @@
 import json
 import os
-from copy import deepcopy
 import torch
 
 from kd.trainer import MLPTrainer, BasicGNNTrainer, KDModelTrainer
 from kd.data import build_dataset
 
 class Experiment:
-    def __init__(self, model_cfg, dataset_cfg, n_runs=1):
-        self.config = self.prepare_cfg(model_cfg, dataset_cfg)
+    def __init__(self, exp_cfg, n_runs=1, dataset=None):
+        self.config = exp_cfg
         self.device = self.build_device(self.config.trainer.gpu)
-        self.dataset = build_dataset(self.config.meta.dataset_name)
-        # self.trainer = self.build_trainer(self.config.meta.model_name)
+        if dataset is None:
+            self.dataset = build_dataset(self.config.meta.dataset_name)
+        else:
+            self.dataset = dataset
         self.n_runs = n_runs
-
-    def prepare_cfg(self, model_cfg, dataset_cfg):
-        cfg = deepcopy(model_cfg)
-        cfg.meta.dataset_name = dataset_cfg.name
-        cfg.dataset = dataset_cfg
-        return cfg
 
     def build_device(self, gpu):
         if gpu is None:

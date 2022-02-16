@@ -17,13 +17,11 @@ trainer:
   verbose: True
 
   kd:
-    knowledge_path: ./ckpt/test_GAT/knowledge.pt
+    knowledge_path: ./examples/ckpt/test_GAT/knowledge.pt
     method: feat     # none, soft, feat
     mask: all     # train_val, train_val_test, all
-    # alpha: 0.95
-    alpha: 1
-    beta: 1
-    gamma: 1
+    alpha: 1.
+    beta: 1.
     temperature: 20
 
   # ckpt_dir: ./ckpt/test_GAT

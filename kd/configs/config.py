@@ -10,6 +10,13 @@ def load_config(cfg_path):
         config = EasyDict(yaml.load(f, Loader=yaml.FullLoader))
     return config
 
+def prepare_experiment_cfg(model_cfg, dataset_cfg):
+    cfg = copy.deepcopy(model_cfg)
+    cfg.meta.dataset_name = dataset_cfg.name
+    cfg.dataset = dataset_cfg
+    return cfg
+
+
 def get_default_config(model, dataset):
     config = EasyDict()
     config_dir = os.path.dirname(__file__)

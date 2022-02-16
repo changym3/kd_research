@@ -1,6 +1,10 @@
 import argparse
+from copy import deepcopy
 from kd.configs import load_config
 from kd.Experiment import Experiment
+from kd.configs.config import prepare_experiment_cfg
+
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -17,8 +21,11 @@ if __name__ == '__main__':
 
     model_cfg = load_config(args.model_cfg)
     dataset_cfg = load_config('./examples/dataset_config.yaml')[args.dataset]
+    exp_cfg= prepare_experiment_cfg(model_cfg, dataset_cfg)
 
-    expt = Experiment(model_cfg=model_cfg, dataset_cfg=dataset_cfg, n_runs=args.n_runs)
+    expt = Experiment(exp_cfg, n_runs=args.n_runs)
     expt.run()
 
     # experiment(args.model, args.dataset, gpu=args.gpu, cfg_path=args.cfg_path)
+
+

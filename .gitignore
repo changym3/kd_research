@@ -1,3 +1,4 @@
 **/__pycache__
-ckpt/*
 *.out
+examples/ckpt
+examples/study

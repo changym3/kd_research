@@ -19,7 +19,7 @@ class KDModelTrainer:
         self.logger = Logger()
 
         self.kd_cfg = cfg.trainer.kd
-        self.kd_module = KDModule(self.kd_cfg)
+        self.kd_module = KDModule(self.kd_cfg, verbose=cfg.trainer.verbose)
         self.knowledge = self.setup_knowledge(self.kd_cfg.knowledge_path, self.device)
 
 
@@ -95,13 +95,15 @@ class KDModelTrainer:
 
 
 class KDModule:
-    def __init__(self, cfg) -> None:
-        self.T = cfg.temperature
-        self.alpha = cfg.alpha
-        self.beta = cfg.beta
-        self.gamma = cfg.gamma
+    def __init__(self, cfg, verbose=None) -> None:
+        self.verbose = verbose
+        self.cfg = cfg
+
         self.method = cfg.method
         self.mask = cfg.mask
+        self.T = cfg.temperature
+        self.alpha = cfg.get('alpha')
+        self.beta = cfg.get('beta')
 
     def loss(self, outs, knowledge, y, train_mask, val_mask, test_mask):
         assert len(train_mask) == len(val_mask) and len(val_mask) == len(test_mask)
@@ -117,18 +119,20 @@ class KDModule:
         ce_loss = F.cross_entropy(outs[-1][train_mask], y[train_mask])
 
         if self.method == 'none':
-            loss = self.alpha * ce_loss
+            loss = ce_loss
         
         elif self.method == 'soft':
             kl_loss = self.soft_loss(outs[-1][mask], knowledge[-1][mask])
-            loss = self.alpha * ce_loss + self.beta * kl_loss
-            print(f'loss = {loss:.4f}, ce_loss = {ce_loss:.4f} ({ce_loss / loss:.2%}), kl_loss = {kl_loss:.4f} ({self.beta * kl_loss / loss:.2%})')
+            loss = ce_loss + self.alpha * kl_loss
+            if self.verbose:
+                print(f'loss = {loss:.4f}, ce_loss = {ce_loss:.4f} ({ce_loss / loss:.2%}), kl_loss = {kl_loss:.4f} ({self.alpha * kl_loss / loss:.2%})')
         
         elif self.method == 'feat':
             kl_loss = self.soft_loss(outs[-1][mask], knowledge[-1][mask])
             hidden_loss = self.hidden_loss(outs[-2][mask], knowledge[-2][mask])
-            loss = self.alpha * ce_loss + self.beta * kl_loss + self.gamma * hidden_loss
-            print(f'loss = {loss:.4f}, ce_loss = {ce_loss:.4f} ({self.alpha * ce_loss / loss:.2%}), kl_loss = {kl_loss:.4f} ({self.beta * kl_loss / loss:.2%}), hidden_loss = {hidden_loss:.4f} ({self.gamma * hidden_loss / loss:.2%})')
+            loss = ce_loss + self.alpha * kl_loss + self.beta * hidden_loss
+            if self.verbose:
+                print(f'loss = {loss:.4f}, ce_loss = {ce_loss:.4f} ({ce_loss / loss:.2%}), kl_loss = {kl_loss:.4f} ({self.alpha * kl_loss / loss:.2%}), hidden_loss = {hidden_loss:.4f} ({self.beta * hidden_loss / loss:.2%})')
 
         return loss
 
