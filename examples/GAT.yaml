@@ -15,6 +15,6 @@ trainer:
   epochs: 300
   verbose: True
 
-  ckpt_dir: ./ckpt/test_GAT
+  ckpt_dir: ./examples/ckpt/test_GAT
   # ckpt_dir: ~
   gpu: 0

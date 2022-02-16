@@ -8,11 +8,11 @@ import torch
 from kd.trainer import BasicGNNTrainer
 from kd.data import build_dataset
 from kd.utils.evaluator import Evaluator
-from kd.utils.knowledge import get_knowledge
+from kd.utils.knowledge import get_model_knowledge
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--ckpt_dir', type=str, default='./ckpt/test_GAT/')
+    parser.add_argument('--ckpt_dir', type=str, default='./examples/ckpt/test_GAT/')
     parser.add_argument('--gpu', type=int, default=0)
     args = parser.parse_args()
 
@@ -25,7 +25,7 @@ if __name__ == '__main__':
 
     dataset = build_dataset(config.meta.dataset_name)
     device = torch.device(f'cuda:{args.gpu}')
-    knowledge = get_knowledge(model, dataset, device)
+    knowledge = get_model_knowledge(model, dataset[0], device=device)
 
     kno_path = os.path.realpath(os.path.join(args.ckpt_dir, 'knowledge.pt'))
     torch.save({'knowledge': knowledge}, kno_path)
@@ -33,7 +33,7 @@ if __name__ == '__main__':
     
     evaluator = Evaluator()
     data = dataset[0]
-    y_pred = knowledge[-1]
+    y_pred = knowledge['feats'][-1].softmax(dim=-1)
 
     all_acc = evaluator.eval(y_pred, data.y)['acc']
     train_acc = evaluator.eval(y_pred[data.train_mask], data.y[data.train_mask])['acc']

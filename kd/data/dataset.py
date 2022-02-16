@@ -15,6 +15,9 @@ def build_dataset(dataset_name):
 
     if dataset_name in ['Cora', 'PubMed', 'CiteSeer']:
         dataset = Planetoid(name=dataset_name, root=root, transform=transform_list)
+        # dataset.data['train_idx']= dataset.data.train_mask.nonzero().flatten()
+        # dataset.data['val_idx']= dataset.data.val_mask.nonzero().flatten()
+        # dataset.data['test_idx']= dataset.data.test_mask.nonzero().flatten()
     elif dataset_name in ['ogbn-arxiv']:
         dataset = PygNodePropPredDataset(name=dataset_name, root=root, transform=transform_list)
         splits = dataset.get_idx_split()

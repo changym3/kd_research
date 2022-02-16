@@ -52,11 +52,11 @@ class Experiment:
 
         
     def run_single(self):
+        print(json.dumps(self.config, indent=4))
         trainer = self.build_trainer(self.config.meta.model_name)
         trainer.fit()
         trainer.logger.report()
         if hasattr(trainer, 'checkpoint') and trainer.checkpoint:
             print(f'The model is at epoch {trainer.checkpoint.best_epoch}, the saving directory is {os.path.realpath(trainer.checkpoint.ckpt_dir)}')
-        print(json.dumps(self.config, indent=4))
         return trainer
 

@@ -43,14 +43,6 @@ class KDModelTrainer:
                 jk=jk, heads=heads, dropout=dropout)
         return model
 
-    def current_knowledge(self, model, data):
-        ktype = self.cfg.meta.student_name 
-        if ktype == 'GNN':
-            kno = K._get_gnn_knowledge(model, data.x, data.edge_index)
-        elif ktype == 'MLP':
-            kno = K._get_mlp_knowledge(model, data.x)
-        return kno
-    
     def model_forward(self, model, data):
         if self.cfg.meta.student_name == 'MLP':
             return model(data.x)
@@ -63,15 +55,15 @@ class KDModelTrainer:
             train_acc, val_acc, test_acc = self.eval_epoch(self.evaluator, self.data, model=self.model)
             self.logger.add_result(epoch, loss, train_acc, val_acc, test_acc, verbose=self.cfg.trainer.verbose)
 
-    def knowledge_loss(self, outs, data):
+    def kd_loss(self, outs, data):
         loss = self.kd_module.loss(outs, self.knowledge, data.y, data.train_mask, data.val_mask, data.test_mask)
         return loss
     
     def train_epoch(self, model, data, optimizer):
         model.train()
         optimizer.zero_grad()
-        outs = self.current_knowledge(model, data)
-        loss = self.knowledge_loss(outs, data)
+        outs = K.get_model_state(model, data, self.cfg.meta.student_name)
+        loss = self.kd_loss(outs, data)
         loss.backward()
         optimizer.step()
         return float(loss)
@@ -88,8 +80,7 @@ class KDModelTrainer:
         return train_acc, val_acc, test_acc
     
     def setup_knowledge(self, kno_path, device):
-        knowledge = torch.load(kno_path)['knowledge']
-        knowledge = [kno.to(device) for kno in knowledge]
+        knowledge = torch.load(kno_path)['knowledge'].to(device)
         return knowledge
 
 
@@ -115,29 +106,37 @@ class KDModule:
             mask = train_mask | val_mask | test_mask
         else:
             raise Exception('The setting of `mask` is not supported')
-        
-        ce_loss = F.cross_entropy(outs[-1][train_mask], y[train_mask])
+
+        ce_loss = F.cross_entropy(outs['feats'][-1][train_mask], y[train_mask])
 
         if self.method == 'none':
             loss = ce_loss
-        
+
         elif self.method == 'soft':
-            kl_loss = self.soft_loss(outs[-1][mask], knowledge[-1][mask])
-            loss = ce_loss + self.alpha * kl_loss
+            kd_loss = self.soft_target_loss(outs['feats'][-1][mask], knowledge['feats'][-1][mask])
+            loss = (1 - self.alpha) * ce_loss + self.alpha * kd_loss
             if self.verbose:
-                print(f'loss = {loss:.4f}, ce_loss = {ce_loss:.4f} ({ce_loss / loss:.2%}), kl_loss = {kl_loss:.4f} ({self.alpha * kl_loss / loss:.2%})')
+                print(f'ce_loss: {(1 - self.alpha) * ce_loss / loss : .2%}, kl_loss: {self.alpha * kd_loss / loss : .2%}')
         
-        elif self.method == 'feat':
-            kl_loss = self.soft_loss(outs[-1][mask], knowledge[-1][mask])
-            hidden_loss = self.hidden_loss(outs[-2][mask], knowledge[-2][mask])
-            loss = ce_loss + self.alpha * kl_loss + self.beta * hidden_loss
+        elif self.method == 'logit':
+            kd_loss = self.logit_loss(outs['feats'][-1][mask], knowledge['feats'][-1][mask])
+            loss = (1 - self.alpha) * ce_loss + self.alpha * kd_loss
             if self.verbose:
-                print(f'loss = {loss:.4f}, ce_loss = {ce_loss:.4f} ({ce_loss / loss:.2%}), kl_loss = {kl_loss:.4f} ({self.alpha * kl_loss / loss:.2%}), hidden_loss = {hidden_loss:.4f} ({self.beta * hidden_loss / loss:.2%})')
+                print(f'ce_loss: {(1 - self.alpha) * ce_loss / loss : .2%}, kl_loss: {self.alpha * kd_loss / loss : .2%}')
+            
+        elif self.method == 'hidden':
+            kd_loss = self.hidden_loss(outs['feats'][0][mask], knowledge['feats'][0][mask])
+            loss = (1 - self.alpha) * ce_loss + self.alpha * kd_loss
+            if self.verbose:
+                print(f'ce_loss: {(1 - self.alpha) * ce_loss / loss : .2%}, kl_loss: {self.alpha * kd_loss / loss : .2%}')
 
         return loss
 
-    def soft_loss(self, logits, soft_y):
-        return F.kl_div(F.log_softmax(logits / self.T, dim=1), F.softmax(soft_y / self.T, dim=1)) * (self.T * self.T)
+    def soft_target_loss(self, out_s, out_t):
+        return F.kl_div(F.log_softmax(out_s / self.T, dim=1), F.softmax(out_t / self.T, dim=1), reduction='batchmean') * (self.T * self.T)
 
-    def hidden_loss(self, hiddens, knos):
-        return F.mse_loss(hiddens, knos)
+    def logit_loss(self, out_s, out_t):
+        return F.mse_loss(out_s, out_t)
+
+    def hidden_loss(self, out_s, out_t):
+        return F.mse_loss(out_s, out_t)
