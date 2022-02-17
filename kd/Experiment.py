@@ -6,6 +6,9 @@ from kd.trainer import MLPTrainer, BasicGNNTrainer, KDModelTrainer
 from kd.data import build_dataset
 
 class Experiment:
+    '''
+    can auto repeat experiment (dataset is only loaded once).
+    '''
     def __init__(self, exp_cfg, n_runs=1, dataset=None):
         self.config = exp_cfg
         self.device = self.build_device(self.config.trainer.gpu)

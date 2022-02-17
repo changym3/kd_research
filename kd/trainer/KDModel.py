@@ -1,10 +1,11 @@
+import os.path as osp
 import torch
 import torch.nn.functional as F
 from torch_geometric.nn.models import MLP, GAT
 
 from kd.utils.evaluator import Evaluator
 from kd.utils.logger import Logger
-from kd.utils import knowledge as K
+from kd.knowledge import knowledge as K
 
 
 class KDModelTrainer:
@@ -20,7 +21,7 @@ class KDModelTrainer:
 
         self.kd_cfg = cfg.trainer.kd
         self.kd_module = KDModule(self.kd_cfg, verbose=cfg.trainer.verbose)
-        self.knowledge = self.setup_knowledge(self.kd_cfg.knowledge_path, self.device)
+        self.knowledge = self.setup_knowledge(osp.join(self.kd_cfg.knowledge_dir, 'knowledge.pt'), self.device)
 
 
     def build_model(self, cfg):

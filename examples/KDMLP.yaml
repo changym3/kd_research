@@ -24,7 +24,7 @@ trainer:
   gpu: 0
 
   kd:
-    knowledge_path: ./examples/ckpt/test_GAT/knowledge.pt
+    knowledge_dir: ./examples/ckpt/test_GAT/
     method: logit     # none, soft, hidden, logit
     mask: all     # train_val, train_val_test, all
     alpha: 1
