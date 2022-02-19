@@ -28,20 +28,20 @@ class KnowlegeState:
         return self._state[key]
 
 
-def get_model_knowledge(model, data, ktype='GNN', device=None):
+def get_model_knowledge(model, data, ktype, device=None):
     model.eval()
     with torch.no_grad():
         ks = get_model_state(model, data, ktype, device)
     return ks
 
 
-def get_model_state(model, data, stype='GNN', device=None):
+def get_model_state(model, data, stype, device=None):
     if device is not None:
         model = model.to(device)
         data = data.to(device)
     assert next(model.parameters()).device == data.edge_index.device
 
-    if stype == 'GNN':
+    if stype == 'GAT':
         ks = _get_gnn_intermediate_state(model, data.x, data.edge_index)
     elif stype == 'MLP':
         ks = _get_mlp_intermediate_state(model, data.x)

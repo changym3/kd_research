@@ -2,3 +2,6 @@
 *.out
 examples/ckpt
 examples/study
+Best Epoch - Train: 0.4952 ± 0.0041
+Best Epoch - Valid: 0.5967 ± 0.0012
+Best Epoch - Test: 0.5710 ± 0.0026

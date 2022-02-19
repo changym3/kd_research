@@ -43,7 +43,11 @@ class Pipeline:
 
         if self.stages == 'T':
             self.train_teacher(self.t_cfg, self.dataset)
+            extract_and_save_knowledge(self.ckpt_dir, self.dataset)
         
+        if self.stages == 'S':
+            self.train_student(self.s_cfg, self.dataset, self.cfg.student.n_runs)
+
         elif self.stages == 'TS':
             self.train_teacher(self.t_cfg, self.dataset)
             extract_and_save_knowledge(self.ckpt_dir, self.dataset)

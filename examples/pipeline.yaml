@@ -1,12 +1,13 @@
 meta:
   teacher: ./examples/GAT.yaml
   student: ./examples/KDMLP.yaml
+  # student: ./examples/KDGAT.yaml
   tuner:  ./examples/KDMLP_tuner.yaml
-  version: test_pipeline
+  version: ~
   pipeline_root: ./examples
   gpu: 0
   dataset_name: ~
-  stages: TS
+  stages: ~
 
 student:
   n_runs: 3

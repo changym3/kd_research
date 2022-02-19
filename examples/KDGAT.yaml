@@ -25,8 +25,8 @@ trainer:
 
   kd:
     knowledge_dir: ./examples/ckpt/test_GAT/
-    method: logit     # none, soft, hidden, logit
-    mask: all     # train_val, train_val_test, all
-    alpha: 1
+    method: soft     # none, soft, hidden, logit
+    mask: all     # train_val, train_val_test, all, train_val_unlabeled
+    alpha: 0.5
     beta: 1.
     temperature: 20
