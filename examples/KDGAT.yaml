@@ -1,5 +1,3 @@
-
-
 meta:
   model_name: KDModel
   student_name: GAT

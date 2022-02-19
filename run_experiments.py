@@ -1,8 +1,6 @@
 import argparse
-from copy import deepcopy
-from kd.configs import load_config
-from kd.Experiment import Experiment
-from kd.configs.config import prepare_experiment_cfg
+from kd.experiment import Experiment
+from kd.configs import prepare_experiment_cfg, load_config
 
 
 

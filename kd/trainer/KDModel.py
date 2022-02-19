@@ -5,7 +5,7 @@ from torch_geometric.nn.models import MLP, GAT
 
 from kd.utils.evaluator import Evaluator
 from kd.utils.logger import Logger
-from kd.knowledge import knowledge as K
+from kd.knowledge import get_model_state
 
 
 class KDModelTrainer:
@@ -63,7 +63,7 @@ class KDModelTrainer:
     def train_epoch(self, model, data, optimizer):
         model.train()
         optimizer.zero_grad()
-        outs = K.get_model_state(model, data, self.cfg.meta.student_name)
+        outs = get_model_state(model, data, self.cfg.meta.student_name)
         loss = self.kd_loss(outs, data)
         loss.backward()
         optimizer.step()

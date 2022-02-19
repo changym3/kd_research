@@ -2,12 +2,13 @@ import copy
 import joblib
 import numpy as np
 import optuna
-from kd.Experiment import Experiment
+from kd.experiment import Experiment
+from kd.configs.config import load_config
 
 class Tuner:
-    def __init__(self, exp_cfg, suggestor, n_trials, n_repeats=1, dataset=None):
+    def __init__(self, exp_cfg, tuner_cfg, n_trials, n_repeats=1, dataset=None):
         self.cfg = self.adjust_cfg(exp_cfg)
-        self.sugggestor = suggestor
+        self.tuner_cfg = tuner_cfg
         self.n_trials = n_trials
         self.n_repeats = n_repeats
         self.dataset = dataset
@@ -17,7 +18,32 @@ class Tuner:
         cfg.trainer.ckpt_dir = None
         cfg.trainer.verbose = False
         return cfg
+
+    def parse_tune_info(self, trial, name, info):
+        '''
+        suggest a choice for `name` param according to `info` into the trial
+        '''
+        if info['func'] == 'suggest_categorical':
+            return trial.suggest_categorical(name, info['choices'])
+        elif info['func'] == 'suggest_float':
+            return trial.suggest_float(name, low=info['low'], high=info['high'], step=info['step'], log=info['log'])
+        elif info['func'] == 'suggest_int':
+            return trial.suggest_int(name, low=info['low'], high=info['high'], step=info['step'], log=info['log'])
     
+    def update_dict_by_keys(self, d, keys, value):
+        td = d
+        for k in keys[:-1]:
+            td = td[k]
+        td[keys[-1]] = value
+        return d
+
+    def suggestor(self, trial, param_cfg, tuner_cfg):
+        cfg = copy.deepcopy(param_cfg)
+        for name, info in tuner_cfg.items():
+            suggest_value = self.parse_tune_info(trial, name, info)
+            self.update_dict_by_keys(cfg, name.split('.'), suggest_value)
+        return cfg
+
     def experiment(self, cfg):
         exp = Experiment(cfg, dataset=self.dataset)
         res = []
@@ -29,7 +55,7 @@ class Tuner:
         return res
 
     def objective(self, trial):
-        cfg = self.sugggestor(trial, self.cfg)
+        cfg = self.suggestor(trial, self.cfg, self.tuner_cfg)
         res = self.experiment(cfg)
         val_acc = res[:, 3].mean()
         trial.set_user_attr("val_acc", val_acc)
