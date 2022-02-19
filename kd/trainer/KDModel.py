@@ -5,7 +5,7 @@ from torch_geometric.nn.models import MLP, GAT
 
 from kd.utils.evaluator import Evaluator
 from kd.utils.logger import Logger
-from kd.knowledge import get_model_state
+import kd.knowledge as K
 
 
 class KDModelTrainer:
@@ -63,7 +63,7 @@ class KDModelTrainer:
     def train_epoch(self, model, data, optimizer):
         model.train()
         optimizer.zero_grad()
-        outs = get_model_state(model, data, self.cfg.meta.student_name)
+        outs = K.get_model_state(model, data, self.cfg.meta.student_name)
         loss = self.kd_loss(outs, data)
         loss.backward()
         optimizer.step()
@@ -105,6 +105,10 @@ class KDModule:
             mask = train_mask | val_mask
         elif self.mask == 'train_val_test':
             mask = train_mask | val_mask | test_mask
+        elif self.mask == 'train_val_unlabeled':
+            labeled_mask = train_mask | val_mask | test_mask
+            unlabeled_mask = torch.ones_like(train_mask, dtype=torch.bool) ^ labeled_mask
+            mask = train_mask | val_mask | unlabeled_mask
         else:
             raise Exception('The setting of `mask` is not supported')
 

@@ -1,24 +1,22 @@
-trainer.kd.method:
-  func: suggest_categorical
-  choices: 
-    - soft
-    - hidden
-    - logit
+study_dir: ./examples/study
+version: ~
 
-trainer.kd.alpha:
-  func: suggest_float
-  low: 0
-  high: 1
-  step: ~
-  log: False
-  
-    # alpha:
-    #   tune_info:
-    #     name: alpha
-    #     type: suggest_int
-    #     values:
-    #       low: 0
-    #       high: 1
-    #       step: ~
-    #       log: False
-    
+n_trials: ~
+n_trial_runs: 1
+
+space:
+
+  # trainer.kd.method:
+  #   func: suggest_categorical
+  #   choices: 
+  #     - soft
+  #     - hidden
+  #     - logit
+
+  trainer.kd.alpha:
+    func: suggest_float
+    low: 0
+    high: 1
+    step: 0.01
+    log: False
+      
