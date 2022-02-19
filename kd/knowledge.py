@@ -65,7 +65,7 @@ def extract_and_save_knowledge(ckpt_dir, dataset=None):
     if dataset is None:
         dataset = build_dataset(cfg.meta.dataset_name)
     device = torch.device(f'cuda:{cfg.trainer.gpu}')
-    knowledge = get_model_knowledge(model, dataset[0], device=device).to('cpu')
+    knowledge = get_model_knowledge(model, dataset[0], 'GAT', device=device).to('cpu')
     # save
     kno_path = os.path.realpath(os.path.join(ckpt_dir, 'knowledge.pt'))
     torch.save({'knowledge': knowledge}, kno_path)

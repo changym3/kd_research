@@ -21,11 +21,11 @@ if __name__ == '__main__':
     # parser.add_argument('--teacher_cfg', type=str, default='./examples/GAT.yaml')
     # parser.add_argument('--student_cfg', type=str, default='./examples/KDMLP.yaml')
     # parser.add_argument('--tuner_cfg', type=str, default='./examples/KDMLP_tuner.yaml')
-
-    parser.add_argument('--stages', type=str, default='TS', choices=['T', 'S', 'TS', 'TT', 'TTS'], help='T=teacher, TS=teacher+student, TT=teacher+tune, TTS=teacher+tune+student')
-    parser.add_argument('--dataset', type=str, default='Cora')
     # parser.add_argument('--gpu', type=int, default=1)
+
+    parser.add_argument('--dataset', type=str, default='Cora')
     parser.add_argument('--version', type=str, default='test_pipeline')
+    parser.add_argument('--stages', type=str, default='S', choices=['T', 'S', 'Tu', 'TTu'], help='T=teacher, S=student, Tu=tune')
 
     args = parser.parse_args()
 
@@ -37,3 +37,5 @@ if __name__ == '__main__':
 
 
 # python run_pipeline.py --dataset PubMed --version PubMed --stages T
+# python run_pipeline.py --dataset Cora --version Cora --stages T
+# python run_pipeline.py --dataset CiteSeer --version CiteSeer --stages T

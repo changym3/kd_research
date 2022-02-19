@@ -1,8 +1,8 @@
 study_dir: ./examples/study
 version: ~
 
-n_trials: ~
-n_trial_runs: 1
+n_trials: 8
+n_trial_runs: 2
 
 space:
 
@@ -17,6 +17,6 @@ space:
     func: suggest_float
     low: 0
     high: 1
-    step: 0.01
+    step: 0.1
     log: False
       

@@ -3,6 +3,7 @@ from kd.configs import prepare_experiment_cfg, load_config
 from kd.experiment import Experiment
 from kd.knowledge import extract_and_save_knowledge
 from kd.data.dataset import build_dataset
+from kd.tuner import Tuner
 
 
 class Pipeline:
@@ -10,13 +11,16 @@ class Pipeline:
         self.cfg = cfg
         self.t_cfg = prepare_experiment_cfg(load_config(cfg.meta.teacher), cfg.meta.dataset_name)
         self.s_cfg = prepare_experiment_cfg(load_config(cfg.meta.student), cfg.meta.dataset_name)
-        self.tuner_cfg = load_config(cfg.meta.tuner)
-        self.dataset = build_dataset(cfg.meta.dataset_name)
-
         self.ckpt_dir = osp.join(cfg.meta.pipeline_root, 'ckpt', cfg.meta.version)
-        self.study_dir = osp.join(cfg.meta.pipeline_root, 'study', cfg.meta.version)
+        self.study_path = osp.join(cfg.meta.pipeline_root, 'study', f'{cfg.meta.version}.study')
         self.gpu = cfg.meta.gpu
         self.stages = cfg.meta.stages
+
+        self.sync_cfg(self.ckpt_dir, self.gpu)
+        self.tuner_cfg = load_config(cfg.meta.tuner)
+        self.dataset = build_dataset(cfg.meta.dataset_name)
+        self.tuner = Tuner(self.s_cfg, self.tuner_cfg, dataset=self.dataset)
+
     
     def train_teacher(self, cfg, dataset):
         expt = Experiment(cfg, dataset=dataset)
@@ -39,19 +43,24 @@ class Pipeline:
         #     print('gpu_id is not same for teacher and student')
 
     def run(self):
-        self.sync_cfg(self.ckpt_dir, self.gpu)
 
         if self.stages == 'T':
             self.train_teacher(self.t_cfg, self.dataset)
             extract_and_save_knowledge(self.ckpt_dir, self.dataset)
-        
-        if self.stages == 'S':
+        elif self.stages == 'S':
             self.train_student(self.s_cfg, self.dataset, self.cfg.student.n_runs)
-
-        elif self.stages == 'TS':
+        elif self.stages == 'Tu':
+            self.tuner.tune()
+            self.tuner.save_study(self.study_path)
+        elif self.stages == 'TTu':
             self.train_teacher(self.t_cfg, self.dataset)
-            extract_and_save_knowledge(self.ckpt_dir, self.dataset)
-            self.train_student(self.s_cfg, self.dataset, self.cfg.student.n_runs)
+            extract_and_save_knowledge(self.ckpt_dir, self.dataset, self.t_cfg.meta.model_name)
+            self.tuner.tune()
+            self.tuner.save_study(self.study_path)
+        # elif self.stages == 'TS':
+        #     self.train_teacher(self.t_cfg, self.dataset)
+        #     extract_and_save_knowledge(self.ckpt_dir, self.dataset)
+        #     self.train_student(self.s_cfg, self.dataset, self.cfg.student.n_runs)
 
-        elif self.stages == 'TT':
-            self.train_teacher(self.t_cfg, self.dataset)
+        # elif self.stages == 'Tu':
+        #     self.train_teacher(self.t_cfg, self.dataset)

@@ -1,7 +1,7 @@
 meta:
   teacher: ./examples/GAT.yaml
-  student: ./examples/KDMLP.yaml
-  # student: ./examples/KDGAT.yaml
+  # student: ./examples/KDMLP.yaml
+  student: ./examples/KDGAT.yaml
   tuner:  ./examples/KDMLP_tuner.yaml
   version: ~
   pipeline_root: ./examples
@@ -11,7 +11,3 @@ meta:
 
 student:
   n_runs: 3
-
-tuner:
-  n_trials: 10
-  n_trial_runs: 1
