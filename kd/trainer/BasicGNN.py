@@ -65,11 +65,15 @@ class BasicGNNTrainer:
         num_layers = cfg.model.num_layers
         num_classes = cfg.dataset.num_classes
         dropout = cfg.model.dropout
-        jk = cfg.model.jk
+        jk = cfg.model.get('jk', 'last')
+        heads = cfg.model.get('heads', 1)
+        norm = cfg.model.get('norm', None)
+        if norm == 'bn':
+            norm = torch.nn.BatchNorm1d(num_features)
 
         if cfg.meta.model_name == 'GAT':
             model = GAT(num_features, num_hiddens, num_layers, num_classes, 
-                jk=jk, heads=cfg.model.heads, dropout=dropout)
+                jk=jk, heads=heads, dropout=dropout)
         elif cfg.meta.model_name == 'GCN':
             model = GCN(num_features, num_hiddens, num_layers, num_classes,
                         dropout=dropout, jk=jk)

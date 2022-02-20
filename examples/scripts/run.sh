@@ -10,7 +10,7 @@
 "trainer.ckpt_dir='./examples/ckpt/test_GCN'" 
 
 python run_experiments.py -nc "trainer.gpu=1" "trainer.ckpt_dir='./examples/ckpt/test_GCN'" "meta.dataset_name='Cora'" "meta.n_runs=5"
-python run_experiments.py -c GCN_cora.yaml -nc "trainer.gpu=1" "meta.dataset_name='Cora'" "meta.n_runs=5"
+python run_experiments.py -c GCN_cora.yaml -nc "trainer.gpu=1" "meta.dataset_name='Cora'" "meta.n_runs=3"
 
 
 

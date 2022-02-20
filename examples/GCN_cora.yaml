@@ -1,7 +1,12 @@
+# python run_experiments.py -c GCN_cora.yaml -nc "trainer.gpu=1"
+# Best Epoch : 30.0000 ± 8.8318
+# Best Epoch - Train: 0.9843 ± 0.0093
+# Best Epoch - Valid: 0.8048 ± 0.0046
+# Best Epoch - Test: 0.8224 ± 0.0099
 meta:
   model_name: GCN
   dataset_name: Cora
-  n_runs: 1
+  n_runs: 5
 
 dataset:
   num_features: ~
@@ -11,13 +16,12 @@ model:
   num_hiddens: 256
   num_layers: 2
   dropout: 0.5
-  jk: last # last, cat, max, lstm,
+  norm: ~
 
 trainer:
   lr: 0.01
-  # weight_decay: !!float 5e-4
-  weight_decay: 0
-  epochs: 500
+  weight_decay: !!float 5e-4
+  epochs: 50
   verbose: True
 
   ckpt_dir: ~
