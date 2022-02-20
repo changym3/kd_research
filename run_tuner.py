@@ -1,6 +1,6 @@
 import argparse
 import os.path as osp
-from kd.configs import load_config, prepare_experiment_cfg
+from kd.configs import load_config, fill_dataset_cfg
 from kd.data.dataset import build_dataset
 from kd.tuner import Tuner
 
@@ -26,7 +26,7 @@ if __name__ == '__main__':
 
     model_cfg = load_config(args.model_cfg)
     tuner_cfg = load_config(args.tuner_cfg)
-    exp_cfg= prepare_experiment_cfg(model_cfg, args.dataset)
+    exp_cfg= fill_dataset_cfg(model_cfg)
     update_cfg_by_args(tuner_cfg, args)
 
     dataset = build_dataset(args.dataset)

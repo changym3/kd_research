@@ -1,5 +1,5 @@
 import os.path as osp
-from kd.configs import prepare_experiment_cfg, load_config
+from kd.configs import fill_dataset_cfg, load_config
 from kd.experiment import Experiment
 from kd.knowledge import extract_and_save_knowledge
 from kd.data.dataset import build_dataset
@@ -9,8 +9,8 @@ from kd.tuner import Tuner
 class Pipeline:
     def __init__(self, cfg):
         self.cfg = cfg
-        self.t_cfg = prepare_experiment_cfg(load_config(cfg.meta.teacher), cfg.meta.dataset_name)
-        self.s_cfg = prepare_experiment_cfg(load_config(cfg.meta.student), cfg.meta.dataset_name)
+        self.t_cfg = fill_dataset_cfg(load_config(cfg.meta.teacher))
+        self.s_cfg = fill_dataset_cfg(load_config(cfg.meta.student))
         self.ckpt_dir = osp.join(cfg.meta.pipeline_root, 'ckpt', cfg.meta.version)
         self.study_path = osp.join(cfg.meta.pipeline_root, 'study', f'{cfg.meta.version}.study')
         self.gpu = cfg.meta.gpu
@@ -26,8 +26,8 @@ class Pipeline:
         expt = Experiment(cfg, dataset=dataset)
         expt.run()
 
-    def train_student(self, cfg, dataset, n_runs):
-        expt = Experiment(cfg, dataset=dataset, n_runs=n_runs)
+    def train_student(self, cfg, dataset):
+        expt = Experiment(cfg, dataset=dataset)
         expt.run()
 
     def sync_cfg(self, ckpt_dir, gpu):
@@ -48,7 +48,7 @@ class Pipeline:
             self.train_teacher(self.t_cfg, self.dataset)
             extract_and_save_knowledge(self.ckpt_dir, self.dataset)
         elif self.stages == 'S':
-            self.train_student(self.s_cfg, self.dataset, self.cfg.student.n_runs)
+            self.train_student(self.s_cfg, self.dataset)
         elif self.stages == 'Tu':
             self.tuner.tune()
             self.tuner.save_study(self.study_path)

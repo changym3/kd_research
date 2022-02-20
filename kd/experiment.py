@@ -9,14 +9,14 @@ class Experiment:
     '''
     can auto repeat experiment (dataset is only loaded once).
     '''
-    def __init__(self, exp_cfg, n_runs=1, dataset=None):
+    def __init__(self, exp_cfg, dataset=None):
         self.config = exp_cfg
         self.device = self.build_device(self.config.trainer.gpu)
         if dataset is None:
             self.dataset = build_dataset(self.config.meta.dataset_name)
         else:
             self.dataset = dataset
-        self.n_runs = n_runs
+        self.n_runs = exp_cfg.meta.n_runs
 
     def build_device(self, gpu):
         if gpu is None:

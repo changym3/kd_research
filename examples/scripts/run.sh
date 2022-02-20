@@ -1,3 +1,20 @@
+# 注意几点：
+# - 如toml的字符串变量应当加上单引号''
+# - 如参数名和参数值之间是等号=，而非空格
+# - 每个参数周围要加引号
+"meta.n_runs=5"
+"meta.dataset_name='Cora'"
+
+"trainer.gpu=1"
+
+"trainer.ckpt_dir='./examples/ckpt/test_GCN'" 
+
+python run_experiments.py -nc "trainer.gpu=1" "trainer.ckpt_dir='./examples/ckpt/test_GCN'" "meta.dataset_name='Cora'" "meta.n_runs=5"
+python run_experiments.py -c GCN_cora.yaml -nc "trainer.gpu=1" "meta.dataset_name='Cora'" "meta.n_runs=5"
+
+
+
+
 
 python run_experiments.py --model_cfg examples/GAT.yaml --dataset Cora
 python run_extract_knowledge.py --ckpt_dir ./examples/ckpt/test_Cora

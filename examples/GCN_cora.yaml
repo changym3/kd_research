@@ -1,0 +1,24 @@
+meta:
+  model_name: GCN
+  dataset_name: Cora
+  n_runs: 1
+
+dataset:
+  num_features: ~
+  num_classes: ~
+
+model:
+  num_hiddens: 256
+  num_layers: 2
+  dropout: 0.5
+  jk: last # last, cat, max, lstm,
+
+trainer:
+  lr: 0.01
+  # weight_decay: !!float 5e-4
+  weight_decay: 0
+  epochs: 500
+  verbose: True
+
+  ckpt_dir: ~
+  gpu: 0
