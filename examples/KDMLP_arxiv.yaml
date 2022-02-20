@@ -15,7 +15,7 @@ model:
   batch_norm: True
 
 trainer:
-  lr: 0.005
+  lr: 0.01
   weight_decay: !!float 5e-4
   epochs: 300
   verbose: True
@@ -25,7 +25,7 @@ trainer:
   kd:
     knowledge_dir: ./examples/ckpt/arxiv_GCN/
     method: soft     # none, soft, hidden, logit
-    mask: train_val_unlabeled     # train_val, train_val_test, all, train_val_unlabeled
-    alpha: 1
+    mask: all     # train_val, train_val_test, all, train_val_unlabeled
+    alpha: 1.
     beta: 1.
     temperature: 20

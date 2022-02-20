@@ -26,4 +26,5 @@ def build_dataset(dataset_name):
         dataset.data.train_mask = torch.zeros(num_nodes,dtype=torch.bool).index_fill_(0, train_idx, True)
         dataset.data.test_mask = torch.zeros(num_nodes,dtype=torch.bool).index_fill_(0, test_idx, True)
         dataset.data.val_mask = torch.zeros(num_nodes,dtype=torch.bool).index_fill_(0, val_idx, True)
+        dataset.data.y = dataset.data.y.flatten()
     return dataset

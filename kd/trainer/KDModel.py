@@ -111,7 +111,6 @@ class KDModule:
             mask = train_mask | val_mask | unlabeled_mask
         else:
             raise Exception('The setting of `mask` is not supported')
-
         ce_loss = F.cross_entropy(outs['feats'][-1][train_mask], y[train_mask])
 
         if self.method == 'none':

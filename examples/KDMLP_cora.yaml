@@ -1,7 +1,7 @@
 meta:
   model_name: KDModel
   student_name: MLP
-  dataset_name: ogbn-arxiv
+  dataset_name: Cora
   n_runs: 1
 
 dataset:
@@ -15,7 +15,7 @@ model:
   batch_norm: True
 
 trainer:
-  lr: 0.005
+  lr: 0.01
   weight_decay: !!float 5e-4
   epochs: 300
   verbose: True
@@ -23,9 +23,9 @@ trainer:
   gpu: 0
 
   kd:
-    knowledge_dir: ./examples/ckpt/arxiv_GCN/
+    knowledge_dir: ./examples/ckpt/cora_GCN/
     method: soft     # none, soft, hidden, logit
-    mask: train_val_unlabeled     # train_val, train_val_test, all, train_val_unlabeled
-    alpha: 1
+    mask: all     # train_val, train_val_test, all, train_val_unlabeled
+    alpha: 1.
     beta: 1.
     temperature: 20
