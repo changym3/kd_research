@@ -10,12 +10,12 @@ if __name__ == '__main__':
     # parser.add_argument('--gpu', type=int, default=1)
     
     parser.add_argument('-c', '--cfg_path', type=str, default='GCN.yaml')
-    parser.add_argument('-nc', '--new_cfg', type=str, nargs='*', default=None)
+    parser.add_argument('-nc', '--new_cfg_list', type=str, nargs='*', default=None)
 
     args = parser.parse_args()
 
     model_cfg = C.load_config(osp.join('./examples', args.cfg_path))
-    new_config = C.load_toml_new_cfg(args.new_cfg)
+    new_config = C.load_toml_new_cfg(args.new_cfg_list)
     C.update_config(model_cfg, new_config)
     exp_cfg= C.fill_dataset_cfg(model_cfg)
 

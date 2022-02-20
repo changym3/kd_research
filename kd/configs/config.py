@@ -15,9 +15,13 @@ def load_config(cfg_path):
         #  Loader=yaml.CLoader)
     return config
 
-def load_toml_new_cfg(s):
-    if isinstance(s, list):
-        return EasyDict(toml.loads("\n".join(s)))
+def load_toml_new_cfg(nc_list):
+    if isinstance(nc_list, list):
+        cfg = EasyDict(toml.loads("\n".join(nc_list)))
+        for k in cfg:
+            if cfg[k] == '~':
+                cfg[k] = None
+        return cfg
     else:
         return EasyDict()
 
@@ -40,7 +44,8 @@ def update_config(cfg, new_cfg, inplace=True):
 def _update_config_inplace(cfg, new_cfg, __path=''):
     for k in new_cfg:
         if k not in cfg:
-            print(f'Invalid config option: {__path[1:]}.{k}')
+            print(f'[Warning] Ovewrite config option: {__path[1:]}.{k}')
+            cfg[k] = new_cfg[k]
             continue
         elif isinstance(cfg[k], Mapping) and isinstance(new_cfg[k], Mapping):
             _update_config_inplace(cfg[k], new_cfg[k], '.'.join([__path, str(k)]))

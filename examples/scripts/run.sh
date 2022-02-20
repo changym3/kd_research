@@ -4,16 +4,13 @@
 # - 每个参数周围要加引号
 "meta.n_runs=5"
 "meta.dataset_name='Cora'"
-
 "trainer.gpu=1"
-
 "trainer.ckpt_dir='./examples/ckpt/test_GCN'" 
 
-python run_experiments.py -nc "trainer.gpu=1" "trainer.ckpt_dir='./examples/ckpt/test_GCN'" "meta.dataset_name='Cora'" "meta.n_runs=5"
-python run_experiments.py -c GCN_cora.yaml -nc "trainer.gpu=1" "meta.dataset_name='Cora'" "meta.n_runs=3"
-
-
-
+python run_experiments.py -c GCN_arxiv.yaml -nc "trainer.gpu=0" "meta.dataset_name='ogbn-arxiv'" "model.norm=~" "meta.n_runs=3"
+python run_experiments.py -c GCN_arxiv.yaml -nc "trainer.gpu=0" "meta.dataset_name='ogbn-arxiv'" "model.norm=bn" "meta.n_runs=3"
+python run_experiments.py -c GCN_arxiv.yaml -nc "trainer.gpu=0" "meta.dataset_name='ogbn-arxiv'" "model.num_layers=3" "meta.n_runs=3"
+python run_experiments.py -c GCN_arxiv.yaml -nc "trainer.gpu=0" "meta.dataset_name='ogbn-arxiv'" "trainer.weight_decay=1e-4" "meta.n_runs=3"
 
 
 python run_experiments.py --model_cfg examples/GAT.yaml --dataset Cora

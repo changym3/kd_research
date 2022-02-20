@@ -9,38 +9,6 @@ from kd.utils.checkpoint import Checkpoint
 from kd.utils.evaluator import Evaluator
 from kd.utils.logger import Logger
 
-# class GCN(torch.nn.Module):
-#     def __init__(self, in_channels, hidden_channels, out_channels, num_layers,
-#                  dropout):
-#         super(GCN, self).__init__()
-
-#         self.convs = torch.nn.ModuleList()
-#         self.convs.append(GCNConv(in_channels, hidden_channels, cached=True))
-#         self.bns = torch.nn.ModuleList()
-#         self.bns.append(torch.nn.BatchNorm1d(hidden_channels))
-#         for _ in range(num_layers - 2):
-#             self.convs.append(
-#                 GCNConv(hidden_channels, hidden_channels, cached=True))
-#             self.bns.append(torch.nn.BatchNorm1d(hidden_channels))
-#         self.convs.append(GCNConv(hidden_channels, out_channels, cached=True))
-
-#         self.dropout = dropout
-
-#     def reset_parameters(self):
-#         for conv in self.convs:
-#             conv.reset_parameters()
-#         for bn in self.bns:
-#             bn.reset_parameters()
-
-#     def forward(self, x, adj_t):
-#         for i, conv in enumerate(self.convs[:-1]):
-#             x = conv(x, adj_t)
-#             x = self.bns[i](x)
-#             x = F.relu(x)
-#             x = F.dropout(x, p=self.dropout, training=self.training)
-#         x = self.convs[-1](x, adj_t)
-#         return x.log_softmax(dim=-1)
-
 
 class BasicGNNTrainer:
     def __init__(self, cfg, dataset, device):
@@ -69,15 +37,18 @@ class BasicGNNTrainer:
         heads = cfg.model.get('heads', 1)
         norm = cfg.model.get('norm', None)
         if norm == 'bn':
-            norm = torch.nn.BatchNorm1d(num_features)
+            norm = torch.nn.BatchNorm1d(num_hiddens)
+        elif norm is None:
+            pass
+        else:
+            raise Exception(f'Invalid argument "{norm}" for cfg.model.norm')
 
         if cfg.meta.model_name == 'GAT':
             model = GAT(num_features, num_hiddens, num_layers, num_classes, 
                 jk=jk, heads=heads, dropout=dropout)
         elif cfg.meta.model_name == 'GCN':
             model = GCN(num_features, num_hiddens, num_layers, num_classes,
-                        dropout=dropout, jk=jk)
-            # model = GCN(num_features, num_hiddens, num_classes, num_layers, dropout)
+                        dropout=dropout, jk=jk, cached=True, norm=norm)
         return model
 
     def fit(self):

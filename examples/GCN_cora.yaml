@@ -16,7 +16,6 @@ model:
   num_hiddens: 256
   num_layers: 2
   dropout: 0.5
-  norm: ~
 
 trainer:
   lr: 0.01
@@ -24,5 +23,5 @@ trainer:
   epochs: 50
   verbose: True
 
-  ckpt_dir: ~
+  ckpt_dir: ./examples/ckpt/test_GCN
   gpu: 0
