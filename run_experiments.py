@@ -4,14 +4,9 @@ from kd.experiment import Experiment
 from kd.configs import config as C
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    # parser.add_argument('--model', type=str, default='MLP')
-    # parser.add_argument('--dataset', type=str, default='Cora')
-    # parser.add_argument('--gpu', type=int, default=1)
-    
+    parser = argparse.ArgumentParser()   
     parser.add_argument('-c', '--cfg_path', type=str, default='GCN.yaml')
     parser.add_argument('-nc', '--new_cfg_list', type=str, nargs='*', default=None)
-
     args = parser.parse_args()
 
     model_cfg = C.load_config(osp.join('./examples', args.cfg_path))

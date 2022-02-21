@@ -80,3 +80,11 @@ class Tuner:
             study_path = osp.join(self.tuner_cfg.study_dir, self.tuner_cfg.version)
         study = self.get_study()
         joblib.dump(study, study_path)
+    
+    def print_study_analysis(self, study=None):
+        if study is None:
+            study = self.get_study()
+        df = study.trials_dataframe()
+        select_columns = df.columns[df.columns.str.startswith('user_attrs') | df.columns.str.startswith('params_trainer')]
+        sort_df = df.sort_values('value', ascending=False)[:5]
+        print(sort_df[select_columns])

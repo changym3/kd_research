@@ -1,8 +1,8 @@
 study_dir: ./examples/study
-version: ~
+version: test_tuner
 
-n_trials: 8
-n_trial_runs: 2
+n_trials: 10
+n_trial_runs: 1
 
 space:
 
@@ -17,6 +17,6 @@ space:
     func: suggest_float
     low: 0
     high: 1
-    step: 0.1
+    step: 0.05
     log: False
       
