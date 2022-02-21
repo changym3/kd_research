@@ -1,6 +1,10 @@
+# python run_experiments.py -c MLP.yaml -nc "trainer.gpu=1" "model.aug.k=0"
+
+
 meta:
   model_name: MLP
-  dataset_name: ~
+  dataset_name: Cora
+  n_runs: 1
 
 dataset:
   num_features: ~
@@ -11,11 +15,14 @@ model:
   num_layers: 3
   dropout: 0.5
   batch_norm: True
+  aug:
+    k: 0
+    combine: cat # cat
 
 trainer:
-  lr: 0.005
+  lr: 0.01
   weight_decay: !!float 5e-4
-  epochs: 300
+  epochs: 400
   verbose: True
-
+  # ckpt_dir: ./examples/ckpt/test_GAT
   gpu: 1
