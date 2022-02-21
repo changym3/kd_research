@@ -1,7 +1,13 @@
+# python run_experiments.py -c KDMLP.yaml -nc "trainer.gpu=1" "dataset_name='Cora'" "trainer.kd.knowledge_dir='./examples/ckpt/cora_GCN/'"
+# python run_experiments.py -c KDMLP.yaml -nc "trainer.gpu=1" "dataset_name='ogbn-arxiv'" "trainer.kd.knowledge_dir='./examples/ckpt/arxiv_GCN/'"
+# python run_experiments.py -c KDMLP.yaml -nc "trainer.gpu=1" "dataset_name='CiteSeer'" "trainer.kd.knowledge_dir='./examples/ckpt/citeseer_GCN/'"
+# python run_experiments.py -c KDMLP.yaml -nc "trainer.gpu=1" "dataset_name='PubMed'" "trainer.kd.knowledge_dir='./examples/ckpt/pubmed_GCN/'"
+
+
 meta:
   model_name: KDModel
   student_name: MLP
-  dataset_name: ogbn-arxiv
+  dataset_name: Cora
   n_runs: 1
 
 dataset:
@@ -23,9 +29,10 @@ trainer:
   gpu: 0
 
   kd:
-    knowledge_dir: ./examples/ckpt/arxiv_GCN/
-    method: soft     # none, soft, hidden, logit
+    knowledge_dir: ./examples/ckpt/cora_GCN/
+    method: soft     # none, soft, hidden, logit, ce_link, soft_link
     mask: train_val_unlabeled     # train_val, train_val_test, all, train_val_unlabeled
-    alpha: 1
+    alpha: 0.3
     beta: 1.
     temperature: 20
+    neg_k: 20

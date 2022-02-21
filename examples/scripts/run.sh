@@ -14,7 +14,7 @@ python run_experiments.py -c GCN_arxiv.yaml -nc "trainer.gpu=0" "meta.dataset_na
 
 
 python run_experiments.py --model_cfg examples/GAT.yaml --dataset Cora
-python run_extract_knowledge.py --ckpt_dir ./examples/ckpt/test_Cora
+
 
 python run_experiments.py --model_cfg examples/GAT.yaml --dataset CiteSeer
 python run_extract_knowledge.py --ckpt_dir ./examples/ckpt/test_CiteSeer

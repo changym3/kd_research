@@ -15,3 +15,16 @@ python run_extract_knowledge.py --ckpt_dir ./examples/ckpt/cora_GCN
 
 python run_experiments.py -c KDMLP_cora.yaml -nc "trainer.gpu=0"
 <!-- Best Epoch - Test: 0.8184 ± 0.0042 -->
+
+
+# Citeseer
+
+python run_extract_knowledge.py --ckpt_dir ./examples/ckpt/pubmed_GCN
+<!-- The Prediction, All: 0.7051, Train: 0.9833, Val: 0.7280, Test: 0.7180 -->
+
+
+
+# PubMed
+python run_extract_knowledge.py --ckpt_dir ./examples/ckpt/citeseer_GCN
+<!-- The Prediction, All: 0.7824, Train: 1.0000, Val: 0.8060, Test: 0.7960 -->
+

@@ -1,7 +1,9 @@
 import os.path as osp
 import torch
+import torch.nn as nn
 import torch.nn.functional as F
 from torch_geometric.nn.models import MLP, GAT
+from torch_geometric.utils import negative_sampling
 
 from kd.utils.evaluator import Evaluator
 from kd.utils.logger import Logger
@@ -20,7 +22,7 @@ class KDModelTrainer:
         self.logger = Logger()
 
         self.kd_cfg = cfg.trainer.kd
-        self.kd_module = KDModule(self.kd_cfg, verbose=cfg.trainer.verbose)
+        self.kd_module = KDModule(self.cfg, verbose=cfg.trainer.verbose, device=device)
         self.knowledge = self.setup_knowledge(osp.join(self.kd_cfg.knowledge_dir, 'knowledge.pt'), self.device)
 
 
@@ -57,7 +59,7 @@ class KDModelTrainer:
             self.logger.add_result(epoch, loss, train_acc, val_acc, test_acc, verbose=self.cfg.trainer.verbose)
 
     def kd_loss(self, outs, data):
-        loss = self.kd_module.loss(outs, self.knowledge, data.y, data.train_mask, data.val_mask, data.test_mask)
+        loss = self.kd_module.loss(outs, self.knowledge, data)
         return loss
     
     def train_epoch(self, model, data, optimizer):
@@ -87,17 +89,21 @@ class KDModelTrainer:
 
 
 class KDModule:
-    def __init__(self, cfg, verbose=None) -> None:
+    def __init__(self, total_cfg, verbose=None, device='cuda:0') -> None:
         self.verbose = verbose
-        self.cfg = cfg
+        self.total_cfg = total_cfg
+        self.cfg = total_cfg.trainer.kd
 
-        self.method = cfg.method
-        self.mask = cfg.mask
-        self.T = cfg.temperature
-        self.alpha = cfg.get('alpha')
-        self.beta = cfg.get('beta')
+        self.method = self.cfg.method
+        self.mask = self.cfg.mask
+        self.T = self.cfg.temperature
+        self.alpha = self.cfg.get('alpha')
+        self.beta = self.cfg.get('beta')
 
-    def loss(self, outs, knowledge, y, train_mask, val_mask, test_mask):
+        self.link_predictor = LinkPredictor(self.total_cfg.model.num_hiddens, self.cfg.get('neg_k')).to(device)
+
+    def loss(self, outs, knowledge, data):
+        y, train_mask, val_mask, test_mask = data.y, data.train_mask, data.val_mask, data.test_mask
         assert len(train_mask) == len(val_mask) and len(val_mask) == len(test_mask)
         if self.mask == 'all':
             mask = torch.ones_like(train_mask, dtype=torch.bool)
@@ -134,6 +140,18 @@ class KDModule:
             if self.verbose:
                 print(f'ce_loss: {(1 - self.alpha) * ce_loss / loss : .2%}, kl_loss: {self.alpha * kd_loss / loss : .2%}')
 
+        elif self.method == 'soft_link':
+            label_loss = self.soft_target_loss(outs['feats'][-1][mask], knowledge['feats'][-1][mask])
+            link_loss = self.link_predictor.link_loss(data.edge_index, outs['feats'][0])
+            loss = (1 - self.alpha) * label_loss + self.alpha * link_loss
+            if self.verbose:
+                print(f'soft_loss: {(1 - self.alpha) * label_loss / loss : .2%}, link_loss: {self.alpha * link_loss / loss : .2%}')
+        
+        elif self.method == 'ce_link':
+            link_loss = self.link_predictor.link_loss(data.edge_index, outs['feats'][0])
+            loss = (1 - self.alpha) * ce_loss + self.alpha * link_loss
+            if self.verbose:
+                print(f'ce_loss: {(1 - self.alpha) * ce_loss / loss : .2%}, link_loss: {self.alpha * link_loss / loss : .2%}')
         return loss
 
     def soft_target_loss(self, out_s, out_t):
@@ -144,3 +162,32 @@ class KDModule:
 
     def hidden_loss(self, out_s, out_t):
         return F.mse_loss(out_s, out_t)
+
+
+class LinkPredictor(torch.nn.Module):
+    def __init__(self, num_hiddens, neg_k):
+        super().__init__()
+        self.num_hiddens = num_hiddens
+        self.neg_k = neg_k
+        self.predictor = nn.Sequential(
+            nn.Linear(2*num_hiddens, num_hiddens), nn.ReLU(),
+            nn.Linear(num_hiddens, 1)
+        )
+
+    def generate_samples(self, edge_index, x):
+        num_nodes = x.shape[0]
+        num_edges = edge_index.shape[1]
+        neg_index = negative_sampling(edge_index, num_neg_samples=num_nodes * self.neg_k)
+        pairs = torch.cat([edge_index, neg_index], dim=-1)
+        labels = torch.cat([torch.ones(num_edges), torch.zeros(num_nodes * self.neg_k)], dim=-1).to(pairs.device)
+        return pairs, labels
+
+    def link_loss(self, pos_edges, x):
+        pairs, labels = self.generate_samples(pos_edges, x)
+        us, vs = pairs
+        feats = torch.cat([x[us], x[vs]], dim=-1)
+        preds = self.predictor(feats)
+        loss = F.binary_cross_entropy_with_logits(preds.flatten(), labels)
+        return loss
+
+
