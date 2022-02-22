@@ -8,7 +8,7 @@ class MLPTrainer:
     def __init__(self, cfg, dataset, device):
         self.cfg = cfg
         self.dataset = dataset
-        self.data = self.preprocess_data(cfg, dataset[0].to(device))
+        self.data = self.augment_features(dataset[0].to(device))
         self.device = device
         self.model = self.build_model(cfg).to(device)
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=cfg.trainer.lr, weight_decay=cfg.trainer.weight_decay)
@@ -16,10 +16,9 @@ class MLPTrainer:
         self.evaluator = Evaluator()
         self.logger = Logger()
     
-    def preprocess_data(self, cfg, data):
-        aug_k = cfg.model.aug.k
-        aug_combine = cfg.model.aug.combine
-
+    def augment_features(self, data):
+        aug_k = self.cfg.model.aug.k
+        aug_combine = self.cfg.model.aug.combine
         transform = T.SIGN(aug_k)
         data = transform(data)
         x_list = [data.x]
@@ -28,15 +27,11 @@ class MLPTrainer:
             delattr(data, f'x{i}')
         if aug_combine == 'cat':
             data.x = torch.cat(x_list, dim=-1)
+            self.cfg.dataset.num_features = self.cfg.dataset.num_features * (aug_k + 1)
         return data
 
     def build_model(self, cfg):
-        aug_k = cfg.model.aug.k
-        aug_combine = cfg.model.aug.combine
-        if aug_combine == 'cat':
-            num_features = cfg.dataset.num_features * (aug_k + 1)
-        else:
-            num_features = cfg.dataset.num_features
+        num_features = cfg.dataset.num_features
         num_hiddens = cfg.model.num_hiddens
         num_layers = cfg.model.num_layers
         num_classes = cfg.dataset.num_classes

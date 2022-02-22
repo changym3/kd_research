@@ -3,6 +3,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch_geometric.nn.models import MLP, GAT
+import torch_geometric.transforms as T
 from torch_geometric.utils import negative_sampling
 
 from kd.utils.evaluator import Evaluator
@@ -14,7 +15,7 @@ class KDModelTrainer:
     def __init__(self, cfg, dataset, device):
         self.cfg = cfg
         self.dataset = dataset
-        self.data = dataset[0].to(device)
+        self.data = self.augment_features(dataset[0].to(device))
         self.device = device
         self.model = self.build_model(cfg).to(device)
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=cfg.trainer.lr, weight_decay=cfg.trainer.weight_decay)
@@ -24,6 +25,20 @@ class KDModelTrainer:
         self.kd_cfg = cfg.trainer.kd
         self.kd_module = KDModule(self.cfg, verbose=cfg.trainer.verbose, device=device)
         self.knowledge = self.setup_knowledge(osp.join(self.kd_cfg.knowledge_dir, 'knowledge.pt'), self.device)
+
+    def augment_features(self, data):
+        aug_k = self.cfg.model.aug.k
+        aug_combine = self.cfg.model.aug.combine
+        transform = T.SIGN(aug_k)
+        data = transform(data)
+        x_list = [data.x]
+        for i in range(1, aug_k+1):
+            x_list.append(getattr(data, f'x{i}'))
+            delattr(data, f'x{i}')
+        if aug_combine == 'cat':
+            data.x = torch.cat(x_list, dim=-1)
+            self.cfg.dataset.num_features = self.cfg.dataset.num_features * (aug_k + 1)
+        return data
 
 
     def build_model(self, cfg):
