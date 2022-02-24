@@ -35,21 +35,7 @@ if __name__ == '__main__':
     tuner.save_study()
     tuner.print_study_analysis()
 
-# python run_tuner.py -c KDMLP.yaml -tc KDMLP_tuner.yaml -nc "base.meta.dataset_name='Cora'" "base.kd.knowledge_dir='./examples/ckpt/cora_GCN/'"
-
-    # parser.add_argument('-c', '--cfg_path', type=str, default='GCN.yaml')
-    # parser.add_argument('-nc', '--new_cfg_list', type=str, nargs='*', default=None)
-    # args = parser.parse_args()
-
-    # model_cfg = C.load_config(osp.join('./examples', args.cfg_path))
-    # new_config = C.load_toml_new_cfg(args.new_cfg_list)
-    # C.update_config(model_cfg, new_config)
-    # exp_cfg= C.fill_dataset_cfg(model_cfg)
-
-    # expt = Experiment(exp_cfg)
-    # expt.run()
-
-    
-    # # # update
-    # # parser.add_argument('--n_trials', type=int, default=5)
-    # # parser.add_argument('--version', type=str, default='KDMLP.study')
+# python run_experiments.py -c KDMLP.yaml
+# python run_tuner.py -c KDMLP.yaml -tc KDMLP_tuner.yaml -nc "base.meta.dataset_name='Cora'" "base.trainer.kd.knowledge_dir='./examples/ckpt/Cora_GCN/'" "base.trainer.mask='soft'"
+# python run_tuner.py -c KDMLP.yaml -tc KDMLP_tuner.yaml -nc "base.meta.dataset_name='PubMed'" "base.trainer.kd.knowledge_dir='./examples/ckpt/PubMed_GCN/'" "base.trainer.mask='soft'"
+# python run_tuner.py -c KDMLP.yaml -tc KDMLP_tuner.yaml -nc "base.meta.dataset_name='CiteSeer'" "base.trainer.kd.knowledge_dir='./examples/ckpt/CiteSeer_GCN/'" "base.trainer.mask='soft'"

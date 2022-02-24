@@ -3,8 +3,10 @@ import joblib
 import numpy as np
 import os.path as osp
 import optuna
+from tabulate import tabulate
 from kd.experiment import Experiment
 from kd.configs.config import load_config
+
 
 class Tuner:
     def __init__(self, exp_cfg, tuner_cfg, dataset=None):
@@ -80,11 +82,13 @@ class Tuner:
             study_path = osp.join(self.tuner_cfg.study_dir, self.tuner_cfg.version)
         study = self.get_study()
         joblib.dump(study, study_path)
+        print(f'Saved study into {study_path}.')
     
     def print_study_analysis(self, study=None):
         if study is None:
             study = self.get_study()
         df = study.trials_dataframe()
         select_columns = df.columns[df.columns.str.startswith('user_attrs') | df.columns.str.startswith('params_trainer')]
-        sort_df = df.sort_values('value', ascending=False)[:5]
-        print(sort_df[select_columns])
+        df = df.sort_values('user_attrs_test_acc', ascending=False)[:5]
+        df = df[select_columns].drop(columns=['user_attrs_config'])
+        print(tabulate(df, headers=df.columns))

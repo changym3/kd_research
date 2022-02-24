@@ -5,7 +5,6 @@ import torch
 import torch.nn.functional as F
 
 from kd.data import build_dataset
-from kd.trainer import BasicGNNTrainer
 from kd.utils.evaluator import Evaluator
 
 
@@ -41,14 +40,14 @@ def get_model_state(model, data, stype, device=None):
         data = data.to(device)
     assert next(model.parameters()).device == data.edge_index.device
 
-    if stype == 'GAT':
+    if stype == 'GNN':
         ks = _get_gnn_intermediate_state(model, data.x, data.edge_index)
-    elif stype == 'MLP':
+    elif stype in ['MLP', 'KDMLP']:
         ks = _get_mlp_intermediate_state(model, data.x)
     return ks
 
 
-def extract_and_save_knowledge(ckpt_dir, dataset=None):
+def extract_and_save_knowledge(ckpt_dir, dataset=None, model_name='GNN'):
     '''
         1. recover teacher model from ckpt
         2. extract & save knowledge
@@ -59,13 +58,21 @@ def extract_and_save_knowledge(ckpt_dir, dataset=None):
     model_state_dict = torch.load(ckpt_path)['model_state_dict']
     cfg_path = os.path.join(ckpt_dir, 'config.pt')  
     cfg = torch.load(cfg_path)['config'] # exp_cfg
-    model = BasicGNNTrainer.build_model(cfg)
+    if model_name == 'GNN':
+        from kd.trainer import BasicGNNTrainer, MLPTrainer, KDModelTrainer
+        model = BasicGNNTrainer.build_model(cfg)
+    elif model_name == 'MLP':
+        from kd.trainer import MLPTrainer
+        model = MLPTrainer.build_model(cfg)
+    elif model_name == 'KDMLP':
+        from kd.trainer import KDModelTrainer
+        model = KDModelTrainer.build_model(cfg) 
     model.load_state_dict(model_state_dict)
     # extract
     if dataset is None:
         dataset = build_dataset(cfg.meta.dataset_name)
     device = torch.device(f'cuda:{cfg.trainer.gpu}')
-    knowledge = get_model_knowledge(model, dataset[0], 'GAT', device=device).to('cpu')
+    knowledge = get_model_knowledge(model, dataset[0], model_name, device=device).to('cpu')
     # save
     kno_path = os.path.realpath(os.path.join(ckpt_dir, 'knowledge.pt'))
     torch.save({'knowledge': knowledge}, kno_path)

@@ -1,5 +1,6 @@
-# python run_experiments.py -c KDMLP.yaml -nc "trainer.gpu=1" "model.aug.k=0"
-
+# python run_experiments.py -c KDMLP.yaml -nc "trainer.gpu=1" "model.aug.k=9" "meta.dataset_name='CiteSeer'" "trainer.kd.knowledge_dir='./examples/ckpt/CiteSeer_GCN/'"
+# python run_experiments.py -c KDMLP.yaml
+# python 
 
 meta:
   model_name: KDModel
@@ -17,7 +18,7 @@ model:
   dropout: 0.5
   batch_norm: True
   aug:
-    k: 2
+    k: 0
     combine: cat # cat
 
 trainer:
@@ -25,13 +26,13 @@ trainer:
   weight_decay: !!float 5e-4
   epochs: 200
   verbose: True
-  # ckpt_dir: ./examples/ckpt/test_GAT
+  ckpt_dir: ./examples/ckpt/test_KD
   gpu: 0
 
   kd:
     knowledge_dir: ./examples/ckpt/Cora_GCN/
-    method: soft     # none, soft, hidden, logit, ce_link, soft_link
-    mask: train_val_unlabeled     # train_val, train_val_test, all, train_val_unlabeled
+    method: soft     # none, soft, hidden, logit, feats, ce_link, soft_link, ce_recover
+    mask: all     # train_val, train_val_test, all, train_val_unlabeled
     alpha: 1
     beta: 1.
     temperature: 20

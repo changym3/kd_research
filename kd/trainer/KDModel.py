@@ -8,6 +8,7 @@ from torch_geometric.utils import negative_sampling
 
 from kd.utils.evaluator import Evaluator
 from kd.utils.logger import Logger
+from kd.utils.checkpoint import Checkpoint
 import kd.knowledge as K
 
 
@@ -17,14 +18,25 @@ class KDModelTrainer:
         self.dataset = dataset
         self.data = self.augment_features(dataset[0].to(device))
         self.device = device
-        self.model = self.build_model(cfg).to(device)
-        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=cfg.trainer.lr, weight_decay=cfg.trainer.weight_decay)
+        self.model = KDModelTrainer.build_model(cfg).to(device)
         self.evaluator = Evaluator()
         self.logger = Logger()
+
+        if self.cfg.trainer.get('ckpt_dir', None) is None:
+            self.checkpoint = None
+        else:
+            self.checkpoint = Checkpoint(cfg, cfg.trainer.ckpt_dir)
 
         self.kd_cfg = cfg.trainer.kd
         self.kd_module = KDModule(self.cfg, verbose=cfg.trainer.verbose, device=device)
         self.knowledge = self.setup_knowledge(osp.join(self.kd_cfg.knowledge_dir, 'knowledge.pt'), self.device)
+
+        self.optimizer = torch.optim.Adam(
+            [
+                {'params': self.model.parameters()},  
+                {'params': self.kd_module.parameters()}
+            ],
+            lr=cfg.trainer.lr, weight_decay=cfg.trainer.weight_decay)
 
     def augment_features(self, data):
         aug_k = self.cfg.model.aug.k
@@ -41,7 +53,7 @@ class KDModelTrainer:
         return data
 
 
-    def build_model(self, cfg):
+    def build_model(cfg):
         num_features = cfg.dataset.num_features
         num_classes = cfg.dataset.num_classes
         
@@ -72,6 +84,8 @@ class KDModelTrainer:
             loss = self.train_epoch(self.model, self.data, self.optimizer)
             train_acc, val_acc, test_acc = self.eval_epoch(self.evaluator, self.data, model=self.model)
             self.logger.add_result(epoch, loss, train_acc, val_acc, test_acc, verbose=self.cfg.trainer.verbose)
+            if self.checkpoint:
+                self.checkpoint.report(epoch, self.model, val_acc)
 
     def kd_loss(self, outs, data):
         loss = self.kd_module.loss(outs, self.knowledge, data)
@@ -103,8 +117,9 @@ class KDModelTrainer:
 
 
 
-class KDModule:
+class KDModule(torch.nn.Module):
     def __init__(self, total_cfg, verbose=None, device='cuda:0') -> None:
+        super().__init__()
         self.verbose = verbose
         self.total_cfg = total_cfg
         self.cfg = total_cfg.trainer.kd
@@ -115,7 +130,9 @@ class KDModule:
         self.alpha = self.cfg.get('alpha')
         self.beta = self.cfg.get('beta')
 
-        self.link_predictor = LinkPredictor(self.total_cfg.model.num_hiddens, self.cfg.get('neg_k')).to(device)
+        num_hiddens = self.total_cfg.model.num_hiddens
+        self.link_predictor = LinkPredictor(num_hiddens, self.cfg.get('neg_k')).to(device)
+        self.decoder = nn.Sequential(nn.Linear(num_hiddens, num_hiddens)).to(device)
 
     def loss(self, outs, knowledge, data):
         y, train_mask, val_mask, test_mask = data.y, data.train_mask, data.val_mask, data.test_mask
@@ -154,6 +171,13 @@ class KDModule:
             loss = (1 - self.alpha) * ce_loss + self.alpha * kd_loss
             if self.verbose:
                 print(f'ce_loss: {(1 - self.alpha) * ce_loss / loss : .2%}, kl_loss: {self.alpha * kd_loss / loss : .2%}')
+        
+        elif self.method == 'feats':
+            kd_loss = F.mse_loss(outs['feats'][0][mask], knowledge['feats'][0][mask]) + F.mse_loss(outs['feats'][-1][mask], knowledge['feats'][-1][mask])
+            kd_loss /= 2
+            loss = (1 - self.alpha) * ce_loss + self.alpha * kd_loss
+            if self.verbose:
+                print(f'ce_loss: {(1 - self.alpha) * ce_loss / loss : .2%}, kl_loss: {self.alpha * kd_loss / loss : .2%}')
 
         elif self.method == 'soft_link':
             label_loss = self.soft_target_loss(outs['feats'][-1][mask], knowledge['feats'][-1][mask])
@@ -163,10 +187,21 @@ class KDModule:
                 print(f'soft_loss: {(1 - self.alpha) * label_loss / loss : .2%}, link_loss: {self.alpha * link_loss / loss : .2%}')
         
         elif self.method == 'ce_link':
-            link_loss = self.link_predictor.link_loss(data.edge_index, outs['feats'][0])
-            loss = (1 - self.alpha) * ce_loss + self.alpha * link_loss
+            kd_loss = self.link_predictor.link_loss(data.edge_index, outs['feats'][0])
+            loss = (1 - self.alpha) * ce_loss + self.alpha * kd_loss
             if self.verbose:
-                print(f'ce_loss: {(1 - self.alpha) * ce_loss / loss : .2%}, link_loss: {self.alpha * link_loss / loss : .2%}')
+                print(f'ce_loss: {ce_loss : .4f}), kd_loss: {kd_loss : .4f}')
+                print(f'ce_loss: {(1 - self.alpha) * ce_loss / loss : .2%}, kd_loss: {self.alpha * kd_loss / loss : .2%}')
+        
+        elif self.method == 'ce_recover':
+            # input = outs['feats'][0][mask] # encoder is the first layer of MLP
+            hidden = outs['feats'][1][mask]
+            output_truth = knowledge['feats'][0][mask]
+            kd_loss = F.mse_loss(output_truth, self.decoder(hidden))
+            loss = (1 - self.alpha) * ce_loss + self.alpha * kd_loss
+            if self.verbose:
+                print(f'ce_loss: {ce_loss : .4f}), kd_loss: {kd_loss : .4f}')
+                print(f'ce_loss: {(1 - self.alpha) * ce_loss / loss : .2%}, kd_loss: {self.alpha * kd_loss / loss : .2%}')
         return loss
 
     def soft_target_loss(self, out_s, out_t):

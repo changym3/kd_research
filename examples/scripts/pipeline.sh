@@ -32,3 +32,14 @@ python run_extract_knowledge.py --ckpt_dir ./examples/ckpt/CiteSeer_GCN
 <!-- The Prediction, All: 0.7824, Train: 1.0000, Val: 0.8060, Test: 0.7960 -->
 
 python run_tuner.py -c KDMLP.yaml -tc KDMLP_tuner.yaml -nc "base.meta.dataset_name='PubMed'" "base.trainer.kd.knowledge_dir='./examples/ckpt/PubMed_GCN/'"
+
+
+运行KDMLP
+python run_experiments.py -c KDMLP.yaml -nc "trainer.gpu=1" "model.aug.k=0" "meta.dataset_name='PubMed'" "trainer.kd.knowledge_dir='./examples/ckpt/PubMed_GCN/'" "trainer.ckpt_dir='./examples/ckpt/PubMed_KD/'"
+python run_extract_knowledge.py --ckpt_dir ./examples/ckpt/PubMed_KD --model_name KDMLP
+
+python run_experiments.py -c KDMLP.yaml -nc "trainer.gpu=1" "model.aug.k=0" "meta.dataset_name='CiteSeer'" "trainer.kd.knowledge_dir='./examples/ckpt/CiteSeer_GCN/'" "trainer.ckpt_dir='./examples/ckpt/CiteSeer_KD/'"
+python run_extract_knowledge.py --ckpt_dir ./examples/ckpt/CiteSeer_KD --model_name KDMLP
+
+python run_experiments.py -c KDMLP.yaml -nc "trainer.gpu=1" "model.aug.k=0" "meta.dataset_name='ogbn-arxiv'" "trainer.kd.knowledge_dir='./examples/ckpt/ogbn-arxiv_GCN/'" "trainer.ckpt_dir='./examples/ckpt/ogbn-arxiv_KD/'"
+python run_extract_knowledge.py --ckpt_dir ./examples/ckpt/ogbn-arxiv_KD --model_name KDMLP

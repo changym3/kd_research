@@ -10,7 +10,7 @@ class MLPTrainer:
         self.dataset = dataset
         self.data = self.augment_features(dataset[0].to(device))
         self.device = device
-        self.model = self.build_model(cfg).to(device)
+        self.model = MLPTrainer.build_model(cfg).to(device)
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=cfg.trainer.lr, weight_decay=cfg.trainer.weight_decay)
         self.criterion = torch.nn.CrossEntropyLoss()
         self.evaluator = Evaluator()
@@ -30,7 +30,7 @@ class MLPTrainer:
             self.cfg.dataset.num_features = self.cfg.dataset.num_features * (aug_k + 1)
         return data
 
-    def build_model(self, cfg):
+    def build_model(cfg):
         num_features = cfg.dataset.num_features
         num_hiddens = cfg.model.num_hiddens
         num_layers = cfg.model.num_layers
