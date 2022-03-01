@@ -14,7 +14,7 @@ model:
   num_hiddens: 256
   num_layers: 3
   dropout: 0.5
-  input_dropout: 0.2
+  input_dropout: 0.1
   batch_norm: True
   aug:
     k: 5

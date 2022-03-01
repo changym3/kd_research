@@ -1,6 +1,7 @@
 # python run_experiments.py -c KDMLP.yaml -nc "trainer.gpu=1" "model.aug.k=9" "meta.dataset_name='CiteSeer'" "trainer.kd.knowledge_dir='./examples/ckpt/CiteSeer_GCN/'"
 # python run_experiments.py -c KDMLP.yaml
-# python 
+# python run_experiments.py -c KDMLP.yaml -nc "meta.dataset_name='CiteSeer'" "trainer.kd.knowledge_dir='./examples/ckpt/CiteSeer_GCN/'"
+# python run_experiments.py -c KDMLP.yaml -nc "trainer.gpu=1" "meta.dataset_name='ogbn-arxiv'" "trainer.kd.knowledge_dir='./examples/ckpt/ogbn-arxiv_GCN/'" "model.knn.hop=0"
 
 meta:
   model_name: KDModel
@@ -17,14 +18,17 @@ model:
   num_layers: 3
   dropout: 0.5
   batch_norm: True
-  aug:
-    k: 0
-    combine: cat # cat
+  knn:
+    k: 20
+    hop: 1
+  raw:
+    hop: 0
+  feat_combine: 'transform' # attn mean transform
 
 trainer:
-  lr: 0.01
-  weight_decay: !!float 5e-4
-  epochs: 200
+  lr: 0.001
+  weight_decay: 0
+  epochs: 800
   verbose: True
   ckpt_dir: ./examples/ckpt/test_KD
   gpu: 0
@@ -32,7 +36,7 @@ trainer:
   kd:
     knowledge_dir: ./examples/ckpt/Cora_GCN/
     method: soft     # none, soft, hidden, logit, feats, ce_link, soft_link, ce_recover
-    mask: all     # train_val, train_val_test, all, train_val_unlabeled
+    mask: train_val_unlabeled     # train_val, train_val_test, all, train_val_unlabeled
     alpha: 1
     beta: 1.
     temperature: 20

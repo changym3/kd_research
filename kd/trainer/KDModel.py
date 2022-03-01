@@ -9,15 +9,39 @@ from torch_geometric.utils import negative_sampling
 from kd.utils.evaluator import Evaluator
 from kd.utils.logger import Logger
 from kd.utils.checkpoint import Checkpoint
+from kd.utils.augmentation import AugmentedFeatures
+from kd.utils.combine import ChannelCombine
 import kd.knowledge as K
 
+
+class KD_GAMLP(nn.Module):
+    def __init__(self, cfg) -> None:
+        super().__init__()
+        self.cfg = cfg
+
+        self.kd_cfg = cfg.trainer.kd
+        self.kd_module = KDModule(self.cfg, verbose=cfg.trainer.verbose, device=device)
+        self.knowledge = self.setup_knowledge(osp.join(self.kd_cfg.knowledge_dir, 'knowledge.pt'), self.device)
+        
+
+        self.num_channels = cfg.model.knn.hop + cfg.model.raw.hop + 1
+        self.combine_type = cfg.model.feat_combine
+        self.channel_combine = ChannelCombine(cfg.dataset.num_features, self.combine_type, self.num_channels)
 
 class KDModelTrainer:
     def __init__(self, cfg, dataset, device):
         self.cfg = cfg
         self.dataset = dataset
-        self.data = self.augment_features(dataset[0].to(device))
+        self.data = dataset[0].to(device)
         self.device = device
+        self.model = KD_GAMLP(cfg)
+
+
+        self.af = AugmentedFeatures(cfg)
+        self.preds = self.knowledge['feats'][-1]
+        self.feats = self.af.augment_features(self.data, self.preds)
+
+    
         self.model = KDModelTrainer.build_model(cfg).to(device)
         self.evaluator = Evaluator()
         self.logger = Logger()
@@ -26,31 +50,13 @@ class KDModelTrainer:
             self.checkpoint = None
         else:
             self.checkpoint = Checkpoint(cfg, cfg.trainer.ckpt_dir)
-
-        self.kd_cfg = cfg.trainer.kd
-        self.kd_module = KDModule(self.cfg, verbose=cfg.trainer.verbose, device=device)
-        self.knowledge = self.setup_knowledge(osp.join(self.kd_cfg.knowledge_dir, 'knowledge.pt'), self.device)
-
         self.optimizer = torch.optim.Adam(
             [
                 {'params': self.model.parameters()},  
-                {'params': self.kd_module.parameters()}
+                {'params': self.kd_module.parameters()},
+                {'params': self.channel_combine.parameters()},
             ],
             lr=cfg.trainer.lr, weight_decay=cfg.trainer.weight_decay)
-
-    def augment_features(self, data):
-        aug_k = self.cfg.model.aug.k
-        aug_combine = self.cfg.model.aug.combine
-        transform = T.SIGN(aug_k)
-        data = transform(data)
-        x_list = [data.x]
-        for i in range(1, aug_k+1):
-            x_list.append(getattr(data, f'x{i}'))
-            delattr(data, f'x{i}')
-        if aug_combine == 'cat':
-            data.x = torch.cat(x_list, dim=-1)
-            self.cfg.dataset.num_features = self.cfg.dataset.num_features * (aug_k + 1)
-        return data
 
 
     def build_model(cfg):
@@ -73,6 +79,9 @@ class KDModelTrainer:
                 jk=jk, heads=heads, dropout=dropout)
         return model
 
+    def prepare_data_features(self, data):
+        data.x = self.channel_combine(self.feats)
+
     def model_forward(self, model, data):
         if self.cfg.meta.student_name == 'MLP':
             return model(data.x)
@@ -94,6 +103,7 @@ class KDModelTrainer:
     def train_epoch(self, model, data, optimizer):
         model.train()
         optimizer.zero_grad()
+        self.prepare_data_features(data)
         outs = K.get_model_state(model, data, self.cfg.meta.student_name)
         loss = self.kd_loss(outs, data)
         loss.backward()
@@ -105,6 +115,7 @@ class KDModelTrainer:
         assert out is not None or model is not None
         if out is None:
             model.eval()
+            self.prepare_data_features(data)
             out = self.model_forward(model, data)
         train_acc = evaluator.eval(out[data.train_mask], data.y[data.train_mask])['acc']
         val_acc = evaluator.eval(out[data.val_mask], data.y[data.val_mask])['acc']
@@ -118,7 +129,7 @@ class KDModelTrainer:
 
 
 class KDModule(torch.nn.Module):
-    def __init__(self, total_cfg, verbose=None, device='cuda:0') -> None:
+    def __init__(self, total_cfg, verbose=None) -> None:
         super().__init__()
         self.verbose = verbose
         self.total_cfg = total_cfg
@@ -131,8 +142,8 @@ class KDModule(torch.nn.Module):
         self.beta = self.cfg.get('beta')
 
         num_hiddens = self.total_cfg.model.num_hiddens
-        self.link_predictor = LinkPredictor(num_hiddens, self.cfg.get('neg_k')).to(device)
-        self.decoder = nn.Sequential(nn.Linear(num_hiddens, num_hiddens)).to(device)
+        self.link_predictor = LinkPredictor(num_hiddens, self.cfg.get('neg_k'))
+        self.decoder = nn.Sequential(nn.Linear(num_hiddens, num_hiddens))
 
     def loss(self, outs, knowledge, data):
         y, train_mask, val_mask, test_mask = data.y, data.train_mask, data.val_mask, data.test_mask

@@ -1,6 +1,7 @@
 import torch
+import torch.nn as nn
 from torch_geometric.nn.models import MLP
-import torch_geometric.transforms as T
+from kd.utils.augmentation import SIGN
 from kd.utils.evaluator import Evaluator
 from kd.utils.logger import Logger
 
@@ -19,8 +20,8 @@ class MLPTrainer:
     def augment_features(self, data):
         aug_k = self.cfg.model.aug.k
         aug_combine = self.cfg.model.aug.combine
-        transform = T.SIGN(aug_k)
-        data = transform(data)
+        aug_norm = self.cfg.model.aug.norm
+        data = SIGN(aug_k, aug_norm)(data)
         x_list = [data.x]
         for i in range(1, aug_k+1):
             x_list.append(getattr(data, f'x{i}'))
@@ -36,10 +37,14 @@ class MLPTrainer:
         num_layers = cfg.model.num_layers
         num_classes = cfg.dataset.num_classes
         dropout = cfg.model.dropout
+        input_dropout = cfg.model.input_dropout
         batch_norm = cfg.model.batch_norm
 
         channel_list = [num_features, *([num_hiddens] * (num_layers - 1)), num_classes]
-        model = MLP(channel_list, dropout, batch_norm=batch_norm)
+        model = nn.Sequential(
+            nn.Dropout(input_dropout),
+            MLP(channel_list, dropout, batch_norm=batch_norm)
+        )
         return model
 
     def fit(self):
