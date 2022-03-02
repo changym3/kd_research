@@ -34,16 +34,18 @@ def get_model_knowledge(model, data, ktype, device=None):
     return ks
 
 
-def get_model_state(model, data, stype, device=None):
+def get_model_state(model, data, stype, device=None, x=None):
     if device is not None:
         model = model.to(device)
         data = data.to(device)
+    if x is None:
+        x = data.x
     assert next(model.parameters()).device == data.edge_index.device
 
     if stype == 'GNN':
-        ks = _get_gnn_intermediate_state(model, data.x, data.edge_index)
+        ks = _get_gnn_intermediate_state(model, x, data.edge_index)
     elif stype in ['MLP', 'KDMLP']:
-        ks = _get_mlp_intermediate_state(model, data.x)
+        ks = _get_mlp_intermediate_state(model, x)
     return ks
 
 
@@ -65,7 +67,7 @@ def extract_and_save_knowledge(ckpt_dir, dataset=None, model_name='GNN'):
         from kd.trainer import MLPTrainer
         model = MLPTrainer.build_model(cfg)
     elif model_name == 'KDMLP':
-        from kd.trainer import KDModelTrainer
+        from kd.trainer.KDModel import KD_GAMLP
         model = KDModelTrainer.build_model(cfg) 
     model.load_state_dict(model_state_dict)
     # extract
@@ -78,15 +80,17 @@ def extract_and_save_knowledge(ckpt_dir, dataset=None, model_name='GNN'):
     torch.save({'knowledge': knowledge}, kno_path)
     print(f'Save predictions into file {kno_path}.')
     # evaluate
-    evaluator = Evaluator()
     data = dataset[0]
     y_pred = knowledge['feats'][-1].softmax(dim=-1)
-    all_acc = evaluator.eval(y_pred, data.y)['acc']
-    train_acc = evaluator.eval(y_pred[data.train_mask], data.y[data.train_mask])['acc']
-    val_acc = evaluator.eval(y_pred[data.val_mask], data.y[data.val_mask])['acc']
-    test_acc = evaluator.eval(y_pred[data.test_mask], data.y[data.test_mask])['acc']
-    print(f'The Prediction, All: {all_acc:.4f}, Train: {train_acc:.4f}, Val: {val_acc:.4f}, Test: {test_acc:.4f}')
+    evaluate(y_pred, data.y, data.train_mask, data.val_mask, data.test_mask)
 
+def evaluate(y_pred, y, train_mask, val_mask, test_mask):
+    evaluator = Evaluator()
+    all_acc = evaluator.eval(y_pred, y)['acc']
+    train_acc = evaluator.eval(y_pred[train_mask], y[train_mask])['acc']
+    val_acc = evaluator.eval(y_pred[val_mask], y[val_mask])['acc']
+    test_acc = evaluator.eval(y_pred[test_mask], y[test_mask])['acc']
+    print(f'The Prediction, All: {all_acc:.4f}, Train: {train_acc:.4f}, Val: {val_acc:.4f}, Test: {test_acc:.4f}')
 
 def _get_gnn_intermediate_state(model, x, edge_index, *args, **kwargs):
     ks = KnowlegeState()

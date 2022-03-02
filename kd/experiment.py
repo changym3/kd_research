@@ -43,9 +43,7 @@ class Experiment:
             trainer = self.run_single()
             res.append(trainer.logger.report(verbose=False))
         
-        if len(res) == 1:
-            trainer.logger.report()
-        else:
+        if len(res) > 1:
             r = torch.as_tensor(res)
             print(f'Highest Train: {r[:, 0].mean():.4f} ± {r[:, 0].std():.4f}')
             print(f'Best Epoch : {r[:, 1].mean():.4f} ± {r[:, 1].std():.4f}')

@@ -15,51 +15,21 @@ import kd.knowledge as K
 
 
 class KD_GAMLP(nn.Module):
-    def __init__(self, cfg) -> None:
+    def __init__(self, cfg, data, knn_pos) -> None:
         super().__init__()
         self.cfg = cfg
-
-        self.kd_cfg = cfg.trainer.kd
-        self.kd_module = KDModule(self.cfg, verbose=cfg.trainer.verbose, device=device)
-        self.knowledge = self.setup_knowledge(osp.join(self.kd_cfg.knowledge_dir, 'knowledge.pt'), self.device)
+        self.data = data
+        self.af = AugmentedFeatures(cfg)
+        self.knn_pos = knn_pos
+        self.feats = self.af.augment_features(self.data, knn_pos)
         
-
         self.num_channels = cfg.model.knn.hop + cfg.model.raw.hop + 1
         self.combine_type = cfg.model.feat_combine
         self.channel_combine = ChannelCombine(cfg.dataset.num_features, self.combine_type, self.num_channels)
 
-class KDModelTrainer:
-    def __init__(self, cfg, dataset, device):
-        self.cfg = cfg
-        self.dataset = dataset
-        self.data = dataset[0].to(device)
-        self.device = device
-        self.model = KD_GAMLP(cfg)
+        self.student_model = self.build_student_model(cfg)
 
-
-        self.af = AugmentedFeatures(cfg)
-        self.preds = self.knowledge['feats'][-1]
-        self.feats = self.af.augment_features(self.data, self.preds)
-
-    
-        self.model = KDModelTrainer.build_model(cfg).to(device)
-        self.evaluator = Evaluator()
-        self.logger = Logger()
-
-        if self.cfg.trainer.get('ckpt_dir', None) is None:
-            self.checkpoint = None
-        else:
-            self.checkpoint = Checkpoint(cfg, cfg.trainer.ckpt_dir)
-        self.optimizer = torch.optim.Adam(
-            [
-                {'params': self.model.parameters()},  
-                {'params': self.kd_module.parameters()},
-                {'params': self.channel_combine.parameters()},
-            ],
-            lr=cfg.trainer.lr, weight_decay=cfg.trainer.weight_decay)
-
-
-    def build_model(cfg):
+    def build_student_model(self, cfg):
         num_features = cfg.dataset.num_features
         num_classes = cfg.dataset.num_classes
         
@@ -78,55 +48,89 @@ class KDModelTrainer:
             model = GAT(num_features, num_hiddens, num_layers, num_classes, 
                 jk=jk, heads=heads, dropout=dropout)
         return model
+    
+    # def forward(self, model, data):
+    #     x = self.channel_combine(self.feats)
+    #     if self.cfg.meta.student_name == 'MLP':
+    #         out = model(x)
+    #     else:
+    #         out = model(x, data.edge_index)
+    #     return out
+    
+    def forward_state(self, data):
+        x = self.channel_combine(self.feats)
+        outs = K.get_model_state(self.student_model, data, self.cfg.meta.student_name, x=x)
+        return outs
+    
+    
+class KDModelTrainer:
+    def __init__(self, cfg, dataset, device):
+        self.cfg = cfg
+        self.dataset = dataset
+        self.data = dataset[0].to(device)
+        self.device = device
 
-    def prepare_data_features(self, data):
-        data.x = self.channel_combine(self.feats)
+        self.kd_module = KDModule(cfg, verbose=cfg.trainer.verbose).to(device)
+        self.knowledge = self.setup_knowledge(osp.join(cfg.trainer.kd.knowledge_dir, 'knowledge.pt'), device)
+        self.model = KD_GAMLP(cfg, data=self.data, knn_pos=self.knowledge['feats'][-1]).to(device)
 
-    def model_forward(self, model, data):
-        if self.cfg.meta.student_name == 'MLP':
-            return model(data.x)
+
+        self.evaluator = Evaluator()
+        self.logger = Logger()
+        if self.cfg.trainer.get('ckpt_dir', None) is None:
+            self.checkpoint = None
         else:
-            return model(data.x, data.edge_index)
+            self.checkpoint = Checkpoint(cfg, cfg.trainer.ckpt_dir)
+        self.optimizer = torch.optim.Adam([
+            {'params': self.model.parameters()},
+            {'params': self.kd_module.parameters()}
+            ], lr=cfg.trainer.lr, weight_decay=cfg.trainer.weight_decay)
 
     def fit(self):
         for epoch in range(self.cfg.trainer.epochs):
             loss = self.train_epoch(self.model, self.data, self.optimizer)
-            train_acc, val_acc, test_acc = self.eval_epoch(self.evaluator, self.data, model=self.model)
+            outs, train_acc, val_acc, test_acc = self.eval_epoch(self.evaluator, self.data, self.model)
             self.logger.add_result(epoch, loss, train_acc, val_acc, test_acc, verbose=self.cfg.trainer.verbose)
             if self.checkpoint:
                 self.checkpoint.report(epoch, self.model, val_acc)
+        self.save_knowledge(self.model, self.data)
 
-    def kd_loss(self, outs, data):
-        loss = self.kd_module.loss(outs, self.knowledge, data)
-        return loss
-    
+    def save_knowledge(self, model, data):
+        ckpt_dir = self.cfg.trainer.ckpt_dir
+        model.load_state_dict(torch.load(osp.join(ckpt_dir, 'model.pt'))['model_state_dict'])
+        outs, train_acc, val_acc, test_acc = self.eval_epoch(self.evaluator, data, model)
+
+        kno_path = osp.join(ckpt_dir, 'knowledge.pt')
+        torch.save({'knowledge': outs}, kno_path)
+        print(f'Save predictions into file {kno_path}.')
+        print(f'The Prediction, Train: {train_acc:.4f}, Val: {val_acc:.4f}, Test: {test_acc:.4f}')
+
     def train_epoch(self, model, data, optimizer):
         model.train()
         optimizer.zero_grad()
-        self.prepare_data_features(data)
-        outs = K.get_model_state(model, data, self.cfg.meta.student_name)
+        outs = model.forward_state(data)
         loss = self.kd_loss(outs, data)
         loss.backward()
         optimizer.step()
         return float(loss)
 
-    #torch.no_grad()
-    def eval_epoch(self, evaluator, data, out=None, model=None):
-        assert out is not None or model is not None
-        if out is None:
-            model.eval()
-            self.prepare_data_features(data)
-            out = self.model_forward(model, data)
+    @torch.no_grad()
+    def eval_epoch(self, evaluator, data, model):
+        model.eval()
+        outs = model.forward_state(data)
+        out = outs['feats'][-1]
         train_acc = evaluator.eval(out[data.train_mask], data.y[data.train_mask])['acc']
         val_acc = evaluator.eval(out[data.val_mask], data.y[data.val_mask])['acc']
         test_acc = evaluator.eval(out[data.test_mask], data.y[data.test_mask])['acc']
-        return train_acc, val_acc, test_acc
-    
+        return outs, train_acc, val_acc, test_acc
+
+    def kd_loss(self, outs, data):
+        loss = self.kd_module.loss(outs, self.knowledge, data)
+        return loss
+
     def setup_knowledge(self, kno_path, device):
         knowledge = torch.load(kno_path)['knowledge'].to(device)
         return knowledge
-
-
 
 class KDModule(torch.nn.Module):
     def __init__(self, total_cfg, verbose=None) -> None:

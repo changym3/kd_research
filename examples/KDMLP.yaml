@@ -20,9 +20,9 @@ model:
   batch_norm: True
   knn:
     k: 20
-    hop: 1
+    hop: 2
   raw:
-    hop: 0
+    hop: 2
   feat_combine: 'transform' # attn mean transform
 
 trainer:

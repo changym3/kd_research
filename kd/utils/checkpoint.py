@@ -22,11 +22,15 @@ class Checkpoint():
     def report(self, epoch, model, score):
         if self.best_score is None:
             self.save_and_update(epoch, model, score)
+            return True
         else:
             if self.mode == 'max' and score > self.best_score:
                 self.save_and_update(epoch, model, score)
+                return True
             elif self.mode == 'min' and score < self.best_score:
                 self.save_and_update(epoch, model, score)            
+                return True
+            return False
 
     def save_and_update(self, epoch, model, score):
         self.best_score = score
