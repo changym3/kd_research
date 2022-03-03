@@ -1,13 +1,16 @@
-# python run_experiments.py -c KDMLP.yaml -nc "trainer.gpu=1" "model.aug.k=9" "meta.dataset_name='CiteSeer'" "trainer.kd.knowledge_dir='./examples/ckpt/CiteSeer_GCN/'"
+# python run_experiments.py -c KDMLP.yaml -nc "trainer.gpu=1" "model.raw.hop=20" "meta.dataset_name='CiteSeer'" "trainer.kd.knowledge_dir='./examples/ckpt/CiteSeer_GCN/'"
+# python run_experiments.py -c KDMLP.yaml -nc "trainer.gpu=1" "model.raw.hop=20" "model.feat_combine='mean'" "model.dropout=0.8"
 # python run_experiments.py -c KDMLP.yaml
+# python run_experiments.py -c KDMLP.yaml -nc "meta.n_runs=3"
 # python run_experiments.py -c KDMLP.yaml -nc "meta.dataset_name='CiteSeer'" "trainer.kd.knowledge_dir='./examples/ckpt/CiteSeer_GCN/'"
-# python run_experiments.py -c KDMLP.yaml -nc "trainer.gpu=1" "meta.dataset_name='ogbn-arxiv'" "trainer.kd.knowledge_dir='./examples/ckpt/ogbn-arxiv_GCN/'" "model.knn.hop=0"
+# python run_experiments.py -c KDMLP.yaml -nc "meta.dataset_name='PubMed'" "trainer.kd.knowledge_dir='./examples/ckpt/PubMed_GCN/'"
+# python run_experiments.py -c KDMLP.yaml -nc "trainer.gpu=1" "meta.dataset_name='ogbn-arxiv'" "trainer.kd.knowledge_dir='./examples/ckpt/ogbn-arxiv_GCN/'" "model.raw.hop=0"
 
 meta:
   model_name: KDModel
   student_name: MLP
   dataset_name: Cora
-  n_runs: 1
+  n_runs: 3
 
 dataset:
   num_features: ~
@@ -19,25 +22,28 @@ model:
   dropout: 0.5
   batch_norm: True
   knn:
+    pos: hidden # hidden, logit
+    cosine: True # True False
     k: 20
-    hop: 2
+    hop: 0
+    merge_graph: False
   raw:
-    hop: 2
-  feat_combine: 'transform' # attn mean transform
+    hop: 7
+  feat_combine: transform # attn mean transform
 
 trainer:
-  lr: 0.001
-  weight_decay: 0
-  epochs: 800
+  lr: 0.01
+  weight_decay: !!float 5e-4
+  epochs: 100
   verbose: True
   ckpt_dir: ./examples/ckpt/test_KD
-  gpu: 0
+  gpu: 1
 
   kd:
     knowledge_dir: ./examples/ckpt/Cora_GCN/
-    method: soft     # none, soft, hidden, logit, feats, ce_link, soft_link, ce_recover
-    mask: train_val_unlabeled     # train_val, train_val_test, all, train_val_unlabeled
-    alpha: 1
+    method: feats     # none, soft, hidden, logit, feats, ce_link, soft_link, ce_recover
+    mask: train     # train_val, train_val_test, all, train_val_unlabeled, unlabeled, train
+    alpha: 0.95
     beta: 1.
     temperature: 20
     neg_k: 20

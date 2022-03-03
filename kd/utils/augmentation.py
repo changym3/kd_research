@@ -12,26 +12,45 @@ class AugmentedFeatures:
         self.cfg = cfg
         self.knn_k = cfg.model.knn.k
         self.knn_hop = cfg.model.knn.hop
+        self.knn_merge_graph = cfg.model.knn.merge_graph
+        self.cosine = cfg.model.knn.cosine 
         self.raw_hop = cfg.model.raw.hop
 
-    def augment_features(self, data, preds):
+    def augment_features(self, data, knowledge):
         if self.knn_hop > 0:
-            knn_graph = self.augment_knn_graph(data, preds, self.knn_k)
+            if self.cfg.model.knn.pos == 'logit':
+                pos = knowledge['feats'][-1]
+            elif self.cfg.model.knn.pos == 'hidden':
+                pos = knowledge['feats'][0]
+            knn_graph = self.augment_knn_graph(data, pos, self.knn_k, self.cosine)
             knn_x_list = self.sign_feats(knn_graph, self.knn_hop, norm=True)[1:]
         else:
             knn_x_list = []
+
         if self.raw_hop > 0:
             raw_x_list = self.sign_feats(data, self.raw_hop, norm=True)
         else:
             raw_x_list = [data.x]
-        feats = torch.stack(raw_x_list + knn_x_list, dim=0)
+
+        feats = torch.stack(raw_x_list + knn_x_list , dim=0)
+
+        # if self.soft_enable:
+        #     soft_data = self.augment_soft_graph(data, knowledge)
+        #     soft_x_list = self.sign_feats(soft_data, self.raw_hop, norm=True)
+        #     soft_feats = torch.stack(soft_x_list, dim=0)
+        #     feats = torch.cat([feats, soft_feats], dim=-1)
+        #     self.cfg.dataset.num_features += self.cfg.dataset.num_classes
         return feats
-    
-    def augment_knn_graph(self, data, pos, k):
+       
+    def augment_knn_graph(self, data, pos, k, cosine):
         device = data.x.device
         pos = pos.to(device)
         knn_data = copy.deepcopy(data)
-        knn_data.edge_index = torch_geometric.nn.knn_graph(x=pos, k=k).to(device)
+        knn_edges = torch_geometric.nn.knn_graph(x=pos, k=k, cosine=cosine, loop=True).to(device)
+        if self.knn_merge_graph:
+            knn_data.edge_index = torch.cat([knn_data.edge_index, knn_edges], dim=-1)
+        else:
+            knn_data.edge_index = knn_edges
         return knn_data
 
     def sign_feats(self, data, aug_k, norm):

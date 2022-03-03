@@ -1,3 +1,4 @@
+from aifc import Error
 import os.path as osp
 import torch
 import torch.nn as nn
@@ -15,18 +16,17 @@ import kd.knowledge as K
 
 
 class KD_GAMLP(nn.Module):
-    def __init__(self, cfg, data, knn_pos) -> None:
+    def __init__(self, cfg, data, knowledge) -> None:
         super().__init__()
         self.cfg = cfg
         self.data = data
         self.af = AugmentedFeatures(cfg)
-        self.knn_pos = knn_pos
-        self.feats = self.af.augment_features(self.data, knn_pos)
+        self.knowledge = knowledge
+        self.feats = self.af.augment_features(self.data, self.knowledge)
         
         self.num_channels = cfg.model.knn.hop + cfg.model.raw.hop + 1
         self.combine_type = cfg.model.feat_combine
-        self.channel_combine = ChannelCombine(cfg.dataset.num_features, self.combine_type, self.num_channels)
-
+        self.channel_combine = ChannelCombine(cfg.dataset.num_features , self.combine_type, self.num_channels)
         self.student_model = self.build_student_model(cfg)
 
     def build_student_model(self, cfg):
@@ -69,11 +69,9 @@ class KDModelTrainer:
         self.dataset = dataset
         self.data = dataset[0].to(device)
         self.device = device
-
         self.kd_module = KDModule(cfg, verbose=cfg.trainer.verbose).to(device)
         self.knowledge = self.setup_knowledge(osp.join(cfg.trainer.kd.knowledge_dir, 'knowledge.pt'), device)
-        self.model = KD_GAMLP(cfg, data=self.data, knn_pos=self.knowledge['feats'][-1]).to(device)
-
+        self.model = KD_GAMLP(cfg, data=self.data, knowledge=self.knowledge).to(device)
 
         self.evaluator = Evaluator()
         self.logger = Logger()
@@ -93,7 +91,8 @@ class KDModelTrainer:
             self.logger.add_result(epoch, loss, train_acc, val_acc, test_acc, verbose=self.cfg.trainer.verbose)
             if self.checkpoint:
                 self.checkpoint.report(epoch, self.model, val_acc)
-        self.save_knowledge(self.model, self.data)
+        if self.checkpoint:
+            self.save_knowledge(self.model, self.data)
 
     def save_knowledge(self, model, data):
         ckpt_dir = self.cfg.trainer.ckpt_dir
@@ -154,6 +153,8 @@ class KDModule(torch.nn.Module):
         assert len(train_mask) == len(val_mask) and len(val_mask) == len(test_mask)
         if self.mask == 'all':
             mask = torch.ones_like(train_mask, dtype=torch.bool)
+        elif self.mask == 'train':
+            mask = train_mask
         elif self.mask == 'train_val':
             mask = train_mask | val_mask
         elif self.mask == 'train_val_test':
@@ -162,6 +163,9 @@ class KDModule(torch.nn.Module):
             labeled_mask = train_mask | val_mask | test_mask
             unlabeled_mask = torch.ones_like(train_mask, dtype=torch.bool) ^ labeled_mask
             mask = train_mask | val_mask | unlabeled_mask
+        elif self.mask == 'unlabeled':
+            labeled_mask = train_mask | val_mask | test_mask
+            mask = torch.ones_like(train_mask, dtype=torch.bool) ^ labeled_mask
         else:
             raise Exception('The setting of `mask` is not supported')
         ce_loss = F.cross_entropy(outs['feats'][-1][train_mask], y[train_mask])
@@ -173,18 +177,21 @@ class KDModule(torch.nn.Module):
             kd_loss = self.soft_target_loss(outs['feats'][-1][mask], knowledge['feats'][-1][mask])
             loss = (1 - self.alpha) * ce_loss + self.alpha * kd_loss
             if self.verbose:
+                print(f'ce_loss: {ce_loss : .4f}), kd_loss: {kd_loss : .4f}')
                 print(f'ce_loss: {(1 - self.alpha) * ce_loss / loss : .2%}, kl_loss: {self.alpha * kd_loss / loss : .2%}')
         
         elif self.method == 'logit':
             kd_loss = self.logit_loss(outs['feats'][-1][mask], knowledge['feats'][-1][mask])
             loss = (1 - self.alpha) * ce_loss + self.alpha * kd_loss
             if self.verbose:
+                print(f'ce_loss: {ce_loss : .4f}), kd_loss: {kd_loss : .4f}')
                 print(f'ce_loss: {(1 - self.alpha) * ce_loss / loss : .2%}, kl_loss: {self.alpha * kd_loss / loss : .2%}')
             
         elif self.method == 'hidden':
             kd_loss = self.hidden_loss(outs['feats'][0][mask], knowledge['feats'][0][mask])
             loss = (1 - self.alpha) * ce_loss + self.alpha * kd_loss
             if self.verbose:
+                print(f'ce_loss: {ce_loss : .4f}), kd_loss: {kd_loss : .4f}')
                 print(f'ce_loss: {(1 - self.alpha) * ce_loss / loss : .2%}, kl_loss: {self.alpha * kd_loss / loss : .2%}')
         
         elif self.method == 'feats':
@@ -192,6 +199,7 @@ class KDModule(torch.nn.Module):
             kd_loss /= 2
             loss = (1 - self.alpha) * ce_loss + self.alpha * kd_loss
             if self.verbose:
+                print(f'ce_loss: {ce_loss : .4f}), kd_loss: {kd_loss : .4f}')
                 print(f'ce_loss: {(1 - self.alpha) * ce_loss / loss : .2%}, kl_loss: {self.alpha * kd_loss / loss : .2%}')
 
         elif self.method == 'soft_link':

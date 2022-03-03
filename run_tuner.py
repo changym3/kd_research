@@ -35,7 +35,8 @@ if __name__ == '__main__':
     tuner.save_study()
     tuner.print_study_analysis()
 
-# python run_experiments.py -c KDMLP.yaml
+# python run_experiments.py -c KDMLP.yaml 
+# python run_tuner.py -c KDMLP.yaml -tc KDMLP_tuner.yaml > tmp.out
 # python run_tuner.py -c KDMLP.yaml -tc KDMLP_tuner.yaml -nc "base.meta.dataset_name='Cora'" "base.trainer.kd.knowledge_dir='./examples/ckpt/Cora_GCN/'" "base.trainer.mask='soft'"
 # python run_tuner.py -c KDMLP.yaml -tc KDMLP_tuner.yaml -nc "base.meta.dataset_name='PubMed'" "base.trainer.kd.knowledge_dir='./examples/ckpt/PubMed_GCN/'" "base.trainer.mask='soft'"
 # python run_tuner.py -c KDMLP.yaml -tc KDMLP_tuner.yaml -nc "base.meta.dataset_name='CiteSeer'" "base.trainer.kd.knowledge_dir='./examples/ckpt/CiteSeer_GCN/'" "base.trainer.mask='soft'"

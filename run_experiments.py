@@ -13,7 +13,7 @@ if __name__ == '__main__':
     new_config = C.load_toml_new_cfg(args.new_cfg_list)
     C.update_config(model_cfg, new_config)
     exp_cfg= C.fill_dataset_cfg(model_cfg)
-
+    
     expt = Experiment(exp_cfg)
     expt.run()
 

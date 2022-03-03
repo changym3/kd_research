@@ -1,0 +1,56 @@
+# python run_experiments.py -c KDMLP_cora.yaml
+
+# Highest Train: 1.0000 ± 0.0000
+# Best Epoch : 50.6667 ± 28.2194
+# Best Epoch - Train: 0.9929 ± 0.0071
+# Best Epoch - Valid: 0.8080 ± 0.0040
+# Best Epoch - Test: 0.8140 ± 0.0040
+
+
+# soft 0.95
+# Highest Train: 0.9857 ± 0.0000
+# Best Epoch : 52.0000 ± 37.2425
+# Best Epoch - Train: 0.9429 ± 0.0378
+# Best Epoch - Valid: 0.8167 ± 0.0023
+# Best Epoch - Test: 0.8207 ± 0.0045
+meta:
+  model_name: KDModel
+  student_name: MLP
+  dataset_name: Cora
+  n_runs: 3
+
+dataset:
+  num_features: ~
+  num_classes: ~
+
+model:
+  num_hiddens: 256
+  num_layers: 3
+  dropout: 0.8
+  batch_norm: True
+  knn:
+    pos: hidden # hidden, logit
+    cosine: True # True False
+    k: 20
+    hop: 0
+    merge_graph: True
+  raw:
+    hop: 10
+  feat_combine: transform # attn mean transform
+
+trainer:
+  lr: 0.01
+  weight_decay: !!float 1e-4
+  epochs: 100
+  verbose: True
+  ckpt_dir: ./examples/ckpt/test_KD
+  gpu: 1
+
+  kd:
+    knowledge_dir: ./examples/ckpt/Cora_GCN/
+    method: soft     # none, soft, hidden, logit, feats, ce_link, soft_link, ce_recover
+    mask: unlabeled     # train_val, train_val_test, all, train_val_unlabeled, unlabeled
+    alpha: 0.2
+    beta: 1.
+    temperature: 20
+    neg_k: 20

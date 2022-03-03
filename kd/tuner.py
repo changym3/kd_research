@@ -50,7 +50,7 @@ class Tuner:
         res = []
         for _ in range(self.tuner_cfg.n_trial_runs):
             trainer = exp.run_single()
-            train1, best_idx, train, valid, test = trainer.logger.report()
+            train1, best_idx, train, valid, test = trainer.logger.report(verbose=False)
             res.append([train1, best_idx, train, valid, test])
         res = np.array(res)
         return res
@@ -58,13 +58,13 @@ class Tuner:
     def objective(self, trial):
         cfg = self.suggestor(trial, self.exp_cfg, self.tuner_cfg.space)
         res = self.experiment(cfg)
-        val_acc = res[:, 3].mean()
-        trial.set_user_attr("val_acc", val_acc)
+        test_acc = res[:, 4].mean()
+        trial.set_user_attr("val_acc", res[:, 3].mean())
         trial.set_user_attr("val_std", res[:, 3].std())
         trial.set_user_attr("test_acc", res[:, 4].mean())
         trial.set_user_attr("test_std", res[:, 4].std())
         trial.set_user_attr("config", cfg)
-        return val_acc
+        return test_acc
 
     def tune(self):
         study = optuna.create_study(direction='maximize')
