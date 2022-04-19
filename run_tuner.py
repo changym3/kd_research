@@ -1,13 +1,22 @@
 import argparse
+import copy
 import os.path as osp
 from kd.configs import config as C
 from kd.data.dataset import build_dataset
 from kd.tuner import Tuner
 
-def update_cfg_by_args(cfg, args):
-    cfg.n_trials = args.n_trials
-    cfg.version = args.version
 
+# def update_cfg_by_args(cfg, args):
+#     cfg.n_trials = args.n_trials
+#     cfg.version = args.version
+
+def adjust_cfg(exp_cfg, tuner_cfg):
+    cfg = copy.deepcopy(exp_cfg)
+    if tuner_cfg.get('gpu', None) is not None:
+        cfg.trainer.gpu = tuner_cfg.gpu
+    cfg.trainer.ckpt_dir = None
+    # cfg.trainer.verbose = False
+    return cfg
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -26,8 +35,8 @@ if __name__ == '__main__':
     new_config = C.load_toml_new_cfg(args.new_cfg_list)
     C.update_config(model_cfg, new_config.get('base', {}))
     C.update_config(model_cfg, new_config.get('tuner', {}))
-
-    exp_cfg= C.fill_dataset_cfg(model_cfg)
+    exp_cfg = C.fill_dataset_cfg(model_cfg)
+    exp_cfg = adjust_cfg(exp_cfg, tuner_cfg)
 
     dataset = build_dataset(exp_cfg.meta.dataset_name)
     tuner = Tuner(exp_cfg, tuner_cfg, dataset=dataset)

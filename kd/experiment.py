@@ -2,8 +2,9 @@ import json
 import os
 import torch
 
-from kd.trainer import MLPTrainer, BasicGNNTrainer, KDModelTrainer
+from kd.trainer import MLPTrainer, BasicGNNTrainer, KDModelTrainer, SGNNTrainer
 from kd.data import build_dataset
+from kd.utils.utils import seed_everything
 
 class Experiment:
     '''
@@ -17,6 +18,7 @@ class Experiment:
         else:
             self.dataset = dataset
         self.n_runs = exp_cfg.meta.n_runs
+        self.seed = exp_cfg.meta.get('seed', None)
 
     def build_device(self, gpu):
         if gpu is None:
@@ -30,13 +32,17 @@ class Experiment:
     def build_trainer(self, model_name):
         if model_name == 'MLP':
             trainer = MLPTrainer(self.config, self.dataset, self.device)
-        elif model_name in ['GAT', 'GCN']:
+        elif model_name in ['GAT', 'GCN', 'SGC']:
             trainer = BasicGNNTrainer(self.config, self.dataset, self.device)
         elif model_name == 'KDModel':
             trainer = KDModelTrainer(self.config, self.dataset, self.device)
+        elif model_name == 'SGNN':
+            trainer = SGNNTrainer(self.config, self.dataset, self.device)
         return trainer
 
     def run(self):
+        if self.seed is not None:
+            seed_everything(self.seed)
         res = []
         # result : highest_train, best_epoch, train, valid, test
         for i in range(self.n_runs):

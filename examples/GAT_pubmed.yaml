@@ -1,0 +1,27 @@
+# python run_experiments.py -c GAT_pubmed.yaml -nc "trainer.gpu=0"
+
+# teacher: The Prediction, Train: 1.0000, Val: 0.8060, Test: 0.7880
+meta:
+  model_name: GAT
+  dataset_name: PubMed
+  n_runs: 1
+  # seed: 0
+
+model:
+  num_hiddens: 32
+  num_layers: 2
+  heads: 1
+  dropout: 0.3
+
+  concat: True
+  jk: last # last, cat, max, lstm,
+  
+
+trainer:
+  lr: 0.005
+  weight_decay: 0.001
+  epochs: 100
+
+  verbose: True
+  ckpt_dir: ./examples/ckpt/test_GAT
+  gpu: 0

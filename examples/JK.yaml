@@ -1,0 +1,27 @@
+# python run_experiments.py -c SGC.yaml -nc "trainer.gpu=1" "meta.dataset_name='Cora'"
+# python run_experiments.py -c SGC.yaml -nc "trainer.gpu=1" "meta.dataset_name='Flickr'"
+
+meta:
+  model_name: SGC
+  dataset_name: CiteSeer
+  n_runs: 1
+
+dataset:
+  num_features: ~
+  num_classes: ~
+
+model:
+  num_hiddens: 64
+  num_layers: 2
+  dropout: 0.5
+  concat: True
+  
+
+trainer:
+  lr: 0.005
+  weight_decay: !!float 5e-4
+  epochs: 300
+  verbose: True
+
+  ckpt_dir: ~
+  gpu: 1

@@ -1,0 +1,43 @@
+# python run_experiments.py -c KDMLP_arxiv.yaml
+# python run_experiments.py -c KDMLP_arxiv.yaml -nc "model.aug_hop=1"
+# python run_experiments.py -c KDMLP_arxiv.yaml -nc "model.aug_hop=10" "trainer.gpu=1"
+# python run_experiments.py -c KDMLP_arxiv.yaml -nc "model.aug_hop=5" "trainer.gpu=1" "trainer.epochs=1000" "trainer.lr=0.001"
+# python run_experiments.py -c KDMLP_arxiv.yaml -nc "model.aug_hop=2" "trainer.kd.method='none'"
+
+meta:
+  model_name: KDModel
+  student_name: MLP
+  dataset_name: ogbn-arxiv
+  n_runs: 1
+
+dataset:
+  num_features: ~
+  num_classes: ~
+
+model:
+  num_hiddens: 128
+  num_layers: 2
+  dropout: 0.5
+  batch_norm: True
+  aug_hop: 5
+  aug_path: ./examples/preprocessed/arxiv_20.feats
+  attn_dropout: 0.5
+  feat_combine: jk # attn mean transform jk
+
+trainer:
+  lr: 0.005
+  weight_decay: !!float 1e-4
+  # weight_decay: 0
+  epochs: 300
+  verbose: True
+  ckpt_dir: ./examples/ckpt/test_KD
+  gpu: 0
+
+  kd:
+    knowledge_dir: ./examples/ckpt/ogbn-arxiv_GCN/
+    method: soft_mimics     # none, soft, hidden, logit, feats, mimics, soft_mimics
+    mask: all     # train_val, train_val_test, all, train_val_unlabeled, unlabeled, train
+    mimics_mask: all     # train_val, train_val_test, all, train_val_unlabeled, unlabeled, train
+    alpha: 0.6
+    beta: 0.7
+    temperature: 0.8

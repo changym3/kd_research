@@ -1,0 +1,20 @@
+# python run_tuner.py -c KDMLP.yaml -tc tuner_grid.yaml > tmp.out
+# python run_tuner.py -c GAT_cora.yaml -tc tuner_grid.yaml > tmp1.out
+
+study_dir: ./examples/study
+# version: test_tuner
+version: GAT_cora_tuner
+
+n_trials: 100
+n_trial_runs: 1
+grid_search: False
+
+space:
+  # model.aug_hop: [2]
+  # model.aug_hop: [5, 10, 15, 20, 25]
+  # model.aug_hop: [5, 10, 20, 30, 40, 50, 100]
+  # model.feat_combine: ['jk', 'transform', 'mean']
+
+  # model.dropout: [0.3, 0.5, 0.7]
+  model.dropout: [0.1, 0.3, 0.5, 0.7, 0.9]
+  trainer.weight_decay: [!!float 1e-2, !!float 1e-3, !!float 1e-4, !!float 1e-5, 0]

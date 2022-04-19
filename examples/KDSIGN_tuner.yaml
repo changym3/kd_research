@@ -1,0 +1,22 @@
+# python run_tuner.py -c KDMLP.yaml -tc KDSIGN_tuner.yaml > tmp.out
+# python run_tuner.py -c KDMLP.yaml -tc KDSIGN_tuner.yaml > tmp.out
+
+study_dir: ./examples/study
+version: sign_tuner
+
+n_trials: 100
+n_trial_runs: 1
+grid_search: True
+
+space:
+  trainer.kd.method: [none]
+  
+  model.aug_hop: [20]
+  # model.aug_hop: [5, 10, 15, 20, 25]
+  model.feat_combine: ['jk']
+  model.inception_dropout: [0.1, 0.3, 0.5, 0.7, 0.9]
+  model.projector_dropout: [0.1, 0.3, 0.5, 0.7, 0.9]
+  # trainer.weight_decay: [!!float 1e-2, !!float 1e-3, !!float 1e-4, !!float 1e-5, 0]
+
+    aug_hop: 2
+  feat_combine: jk # attn mean transform jk

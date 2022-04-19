@@ -1,0 +1,17 @@
+# python run_tuner.py -c SGNN.yaml -tc SGNN_tuner.yaml > tmp1.out
+# python run_tuner.py -c SGNN.yaml -tc SGNN_tuner.yaml -nc "base.meta.dataset_name='ogbn-arxiv'" "base.trainer.gpu=1" > tmp2.out
+
+study_dir: ./examples/study
+version: SGNN_grid_arxiv_drop
+gpu: 1
+
+n_trials: 50
+n_trial_runs: 1
+grid_search: True
+
+space:
+  # meta.dataset_name: ['Flickr']
+  # trainer.kd.knowledge_dir: ['./examples/ckpt/Flickr_GCN/']
+  model.aug_hop: [5]
+  model.attn_drop: [0.5, 0.3, 0.7]
+

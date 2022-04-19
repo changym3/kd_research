@@ -5,12 +5,14 @@
 # python run_experiments.py -c KDMLP.yaml -nc "meta.dataset_name='CiteSeer'" "trainer.kd.knowledge_dir='./examples/ckpt/CiteSeer_GCN/'"
 # python run_experiments.py -c KDMLP.yaml -nc "meta.dataset_name='PubMed'" "trainer.kd.knowledge_dir='./examples/ckpt/PubMed_GCN/'"
 # python run_experiments.py -c KDMLP.yaml -nc "trainer.gpu=1" "meta.dataset_name='ogbn-arxiv'" "trainer.kd.knowledge_dir='./examples/ckpt/ogbn-arxiv_GCN/'" "model.raw.hop=0"
+# python run_tuner.py -c KDMLP.yaml -tc KDMLP_tuner.yaml > tmp.out
+
 
 meta:
   model_name: KDModel
   student_name: MLP
   dataset_name: Cora
-  n_runs: 3
+  n_runs: 1
 
 dataset:
   num_features: ~
@@ -18,32 +20,28 @@ dataset:
 
 model:
   num_hiddens: 256
-  num_layers: 3
-  dropout: 0.5
+  num_layers: 2
+  dropout: 0.3
+  # projector_dropout: 0.5
+  # inception_dropout: 0.1
   batch_norm: True
-  knn:
-    pos: hidden # hidden, logit
-    cosine: True # True False
-    k: 20
-    hop: 0
-    merge_graph: False
-  raw:
-    hop: 7
-  feat_combine: transform # attn mean transform
+  # act: prelu # relu
+  aug_hop: 5
+  feat_combine: jk # attn mean transform jk
 
 trainer:
   lr: 0.01
-  weight_decay: !!float 5e-4
-  epochs: 100
+  weight_decay: !!float 1e-4
+  epochs: 300
   verbose: True
   ckpt_dir: ./examples/ckpt/test_KD
-  gpu: 1
+  gpu: 0
 
   kd:
-    knowledge_dir: ./examples/ckpt/Cora_GCN/
-    method: feats     # none, soft, hidden, logit, feats, ce_link, soft_link, ce_recover
-    mask: train     # train_val, train_val_test, all, train_val_unlabeled, unlabeled, train
-    alpha: 0.95
-    beta: 1.
-    temperature: 20
-    neg_k: 20
+    knowledge_dir: ./examples/ckpt/Cora_GAT/
+    method: soft_mimics     # none, soft, hidden, logit, feats, mimics, soft_mimics
+    mask: all     # train_val, train_val_test, all, train_val_unlabeled, unlabeled, train
+    mimics_mask: all     # train_val, train_val_test, all, train_val_unlabeled, unlabeled, train
+    alpha: 0.5
+    beta: 0
+    temperature: 0.05

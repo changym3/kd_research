@@ -5,61 +5,39 @@ from torch_geometric.transforms import BaseTransform
 from torch_sparse import SparseTensor
 
 
+def sign_feats(data, aug_k, norm=True):
+    data = SIGN(aug_k, norm)(data)
+    x_list = [data.x]
+    for i in range(1, aug_k+1):
+        x_list.append(getattr(data, f'x{i}'))
+        delattr(data, f'x{i}')
+    return x_list
 
+
+def aug_feat_to_path(data, aug_max, save_path):
+    data_tmp = data.to('cpu')
+    x_list = sign_feats(data_tmp, aug_k=aug_max)
+    torch.save({'x_list': x_list}, save_path)
 
 class AugmentedFeatures:
-    def __init__(self, cfg):
-        self.cfg = cfg
-        self.knn_k = cfg.model.knn.k
-        self.knn_hop = cfg.model.knn.hop
-        self.knn_merge_graph = cfg.model.knn.merge_graph
-        self.cosine = cfg.model.knn.cosine 
-        self.raw_hop = cfg.model.raw.hop
+    def __init__(self, aug_hop, aug_path=None):
+        self.aug_hop = aug_hop
+        self.aug_path = aug_path
 
-    def augment_features(self, data, knowledge):
-        if self.knn_hop > 0:
-            if self.cfg.model.knn.pos == 'logit':
-                pos = knowledge['feats'][-1]
-            elif self.cfg.model.knn.pos == 'hidden':
-                pos = knowledge['feats'][0]
-            knn_graph = self.augment_knn_graph(data, pos, self.knn_k, self.cosine)
-            knn_x_list = self.sign_feats(knn_graph, self.knn_hop, norm=True)[1:]
-        else:
-            knn_x_list = []
-
-        if self.raw_hop > 0:
-            raw_x_list = self.sign_feats(data, self.raw_hop, norm=True)
-        else:
-            raw_x_list = [data.x]
-
-        feats = torch.stack(raw_x_list + knn_x_list , dim=0)
-
-        # if self.soft_enable:
-        #     soft_data = self.augment_soft_graph(data, knowledge)
-        #     soft_x_list = self.sign_feats(soft_data, self.raw_hop, norm=True)
-        #     soft_feats = torch.stack(soft_x_list, dim=0)
-        #     feats = torch.cat([feats, soft_feats], dim=-1)
-        #     self.cfg.dataset.num_features += self.cfg.dataset.num_classes
-        return feats
-       
-    def augment_knn_graph(self, data, pos, k, cosine):
+    def augment_features(self, data):
         device = data.x.device
-        pos = pos.to(device)
-        knn_data = copy.deepcopy(data)
-        knn_edges = torch_geometric.nn.knn_graph(x=pos, k=k, cosine=cosine, loop=True).to(device)
-        if self.knn_merge_graph:
-            knn_data.edge_index = torch.cat([knn_data.edge_index, knn_edges], dim=-1)
+        if self.aug_path:
+            x_list = torch.load(self.aug_path)['x_list']
+            x_list = x_list[:self.aug_hop+1]
+            x_list = [x.to(device) for x in x_list]
         else:
-            knn_data.edge_index = knn_edges
-        return knn_data
-
-    def sign_feats(self, data, aug_k, norm):
-        data = SIGN(aug_k, norm)(data)
-        x_list = [data.x]
-        for i in range(1, aug_k+1):
-            x_list.append(getattr(data, f'x{i}'))
-            delattr(data, f'x{i}')
+            if self.aug_hop > 0:
+                x_list = sign_feats(data, self.aug_hop, norm=True)
+            else:
+                x_list = [data.x]
         return x_list
+    
+
     
 
 

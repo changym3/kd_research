@@ -1,12 +1,10 @@
-# python run_experiments.py -c KDMLP_cora.yaml -nc "trainer.gpu=1"
-# python run_experiments.py -c KDMLP_cora.yaml -nc "trainer.gpu=1" "model.aug_hop=5"
-# python run_experiments.py -c KDMLP_cora.yaml -nc "trainer.gpu=1" "model.aug_hop=1" "trainer.kd.mask='unlabeled'"
+# python run_experiments.py -c KDMLP_citeseer.yaml
 # The Prediction, Train: 1.0000, Val: 0.8300, Test: 0.8410
 
 meta:
   model_name: KDModel
   student_name: MLP
-  dataset_name: Cora
+  dataset_name: PubMed
   n_runs: 1
 
 dataset:
@@ -14,26 +12,26 @@ dataset:
   num_classes: ~
 
 model:
-  num_hiddens: 256
+  num_hiddens: 32
   num_layers: 2
   dropout: 0.3
   batch_norm: True
-  aug_hop: 5
+  aug_hop: 10
   feat_combine: jk # attn mean transform jk
 
 trainer:
-  lr: 0.01
+  lr: 0.005
   weight_decay: !!float 1e-4
-  epochs: 300
+  epochs: 500
   verbose: True
   ckpt_dir: ./examples/ckpt/test_KD
-  gpu: 0
+  gpu: 1
 
   kd:
-    knowledge_dir: ./examples/ckpt/Cora_GAT/
+    knowledge_dir: ./examples/ckpt/PubMed_GAT/
     method: soft_mimics     # none, soft, hidden, logit, feats, mimics, soft_mimics
     mask: all     # train_val, train_val_test, all, train_val_unlabeled, unlabeled, train
     mimics_mask: all     # train_val, train_val_test, all, train_val_unlabeled, unlabeled, train
-    alpha: 1
-    beta: 0.15
-    temperature: 0.05
+    alpha: 0.25
+    beta: 0.25
+    temperature: 0.5

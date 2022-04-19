@@ -1,30 +1,29 @@
 # python run_experiments.py -c GCN_arxiv.yaml -nc "trainer.gpu=1"
-# Best Epoch : 344.6667 ± 9.0738
-# Best Epoch - Train: 0.7816 ± 0.0011
-# Best Epoch - Valid: 0.7267 ± 0.0011
-# Best Epoch - Test: 0.7166 ± 0.0024
+# python run_experiments.py -c GCN_arxiv.yaml -nc "trainer.gpu=1" "model.jk='cat'" "trainer.lr=0.001" "trainer.epochs=1000" "model.num_layers=3"
+# The Prediction, Train: 0.7505, Val: 0.7208, Test: 0.7123
+# The Prediction, Train: 0.7906, Val: 0.7348, Test: 0.7242 
 
 meta:
   model_name: GCN
   dataset_name: ogbn-arxiv
-  n_runs: 3
+  n_runs: 1
 
 dataset:
   num_features: ~
   num_classes: ~
 
 model:
-  num_hiddens: 256
+  num_hiddens: 128
   num_layers: 3
-  dropout: 0.5
+  dropout: 0.3
   norm: bn
+  # jk: cat
 
 trainer:
-  lr: 0.01
-  # weight_decay: !!float 5e-4
+  lr: 0.005
   weight_decay: 0
   epochs: 500
   verbose: True
 
   ckpt_dir: ./examples/ckpt/test_GCN
-  gpu: 0
+  gpu: 1

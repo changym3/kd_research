@@ -17,3 +17,13 @@ ogbn-arxiv:
   name: ogbn-arxiv
   num_features: 128
   num_classes: 40
+
+Flickr:
+  name: Flickr
+  num_features: 500
+  num_classes: 7
+
+Reddit:
+  name: Reddit
+  num_features: 602
+  num_classes: 41

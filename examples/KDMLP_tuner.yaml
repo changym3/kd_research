@@ -1,90 +1,50 @@
-study_dir: ./examples/study
-version: test_tuner
+# python run_tuner.py -c KDMLP_cora.yaml -tc KDMLP_tuner.yaml > tmp2.out
+# python run_tuner.py -c KDMLP_citeseer.yaml -tc KDMLP_tuner.yaml > tmp2.out
+# python run_tuner.py -c KDMLP_pubmed.yaml -tc KDMLP_tuner.yaml > tmp2.out
+# python run_tuner.py -c KDMLP_arxiv.yaml -tc KDMLP_tuner.yaml > tmp2.out
+# python run_tuner.py -c KDMLP_flickr.yaml -tc KDMLP_tuner.yaml > tmp2.out
 
-n_trials: 20
+study_dir: ./examples/study
+version: 0324_KDMLP_cora_beta_temp
+
+n_trials: 500
 n_trial_runs: 1
+grid_search: True
+gpu: 0
 
 space:
-  # general
-  # trainer.lr:
-  #   func: suggest_categorical
-  #   choices:
-  #     - 0.01
-  #     - 0.001
-  trainer.weight_decay:
-    func: suggest_categorical
-    choices:
-      - 0
-      - 0.00001
-      - 0.00005
-      - 0.0001
-      - 0.0005
-      - 0.001
-      - 0.005
-  model.dropout:
-    func: suggest_float
-    low: 0.2
-    high: 0.8
-    step: 0.1
-    log: False
+  # model.dropout: [0.3, 0.5, 0.7]
+  # model.attn_dropout: [0.3, 0.5, 0.7]
 
-  # GAMLP
-  # model.raw.hop:
-  #   func: suggest_int
-  #   low: 1
-  #   high: 10
-  #   step: 1
-  #   log: False
+  # model.aug_hop: [2]
+  # model.aug_hop: [5]
+  # model.aug_hop: [2, 3, 4, 5, 6, 7, 8]
+  trainer.kd.alpha: [1]
+  trainer.kd.beta: [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
+  trainer.kd.temperature: [0.001, 0.01, 0.05, 0.1, 0.2, 0.5, 0.8, 1, 2, 5, 10]
+  # trainer.weight_decay: [0.01, !!float 1e-3, !!float 1e-4, !!float 1e-5, 0]  
 
-  # # KD
-  # trainer.kd.method:
-  #   func: suggest_categorical
-  #   choices: 
-  #     - soft
-  #     - hidden
-  #     - logit
-
-  # trainer.kd.alpha:
-  #   func: suggest_float
-  #   low: 0
-  #   high: 1
-  #   step: 0.05
-  #   log: False
-  
+# space_cfgs:
+#   trainer.kd.alpha:
+#     func: suggest_float
+#     low: 0
+#     high: 1
+#     step: 0.05
+#     log: False
+#   trainer.kd.beta:
+#     func: suggest_float
+#     low: 0
+#     high: 1
+#     step: 0.05
+#     log: False
 
 
-
-
-
-  ## KNN
-  # model.knn.pos:
-  #   func: suggest_categorical
-  #   choices: 
-  #     - hidden
-  #     - logit
-
-  # model.knn.cosine:
-  #   func: suggest_categorical
-  #   choices: 
-  #     - True
-  #     - False
-
-  # model.knn.merge_graph:
-  #   func: suggest_categorical
-  #   choices: 
-  #     - True
-  #     - False
-
-  # model.knn.k:
-  #   func: suggest_int
-  #   low: 1
-  #   high: 500
-  #   step: 1
-  #   log: True
-  
-  # model.knn.hop:
-  #   func: suggest_int
-  #   low: 1
-  #   high: 10
-  #   step: 1
-  #   log: False
+# model.aug_hop: [5, 10, 15, 20, 25]
+# model.feat_combine: ['jk', 'transform', 'mean']
+# trainer.kd.method: [soft_mimics] # mimics soft soft_mimics
+# trainer.kd.mask: [all, unlabeled, train] # unlabeled, all
+# trainer.kd.mimics_mask: [all, unlabeled, train] # unlabeled, all
+# trainer.kd.beta: [0, 0.0001, 0.001, 0.01, 0.1, 0.5, 1, 5, 10, 100]
+# trainer.kd.temperature: [0.5, 1, 2, 5, 10, 20, 50, 100]
+# model.inception_dropout: [0.1, 0.3, 0.5, 0.7, 0.9]
+# model.projector_dropout: [0.1, 0.3, 0.5, 0.7, 0.9]

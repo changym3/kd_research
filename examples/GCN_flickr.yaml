@@ -1,0 +1,27 @@
+# python run_experiments.py -c GCN_flickr.yaml -nc "trainer.gpu=1"
+# The Prediction, Train: 0.5610, Val: 0.5359, Test: 0.5370
+
+meta:
+  model_name: GCN
+  dataset_name: Flickr
+  n_runs: 1
+
+dataset:
+  num_features: ~
+  num_classes: ~
+
+model:
+  num_hiddens: 128
+  num_layers: 3
+  dropout: 0.3
+  norm: bn
+  jk: cat
+
+trainer:
+  lr: 0.01
+  weight_decay: !!float 1e-5
+  epochs: 300
+  verbose: True
+
+  ckpt_dir: ./examples/ckpt/test_GCN
+  gpu: 0

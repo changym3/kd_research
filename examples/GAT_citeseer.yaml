@@ -1,0 +1,26 @@
+# python run_experiments.py -c GAT_citeseer.yaml -nc "trainer.gpu=0"
+
+# teacher: The Prediction, Train: 0.8750, Val: 0.7200, Test: 0.7320
+meta:
+  model_name: GAT
+  dataset_name: CiteSeer
+  n_runs: 1
+  # seed: 0
+
+model:
+  num_hiddens: 256
+  num_layers: 2
+  heads: 4
+  dropout: 0.7
+  concat: True
+  jk: last # last, cat, max, lstm,
+  
+
+trainer:
+  lr: 0.005
+  weight_decay: 0.001
+  epochs: 300
+  verbose: True
+
+  ckpt_dir: ./examples/ckpt/test_GAT
+  gpu: 0

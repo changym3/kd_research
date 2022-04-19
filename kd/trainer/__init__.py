@@ -1,3 +1,4 @@
 from .BasicGNN import BasicGNNTrainer
 from .MLP import MLPTrainer
-from .KDModel import KDModelTrainer
+from .KD_GAMLP import KDModelTrainer
+from .SGNN import SGNNTrainer

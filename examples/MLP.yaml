@@ -3,7 +3,7 @@
 
 meta:
   model_name: MLP
-  dataset_name: ogbn-arxiv
+  dataset_name: Cora
   n_runs: 1
 
 dataset:
@@ -14,10 +14,10 @@ model:
   num_hiddens: 256
   num_layers: 3
   dropout: 0.5
-  input_dropout: 0.2
+  input_dropout: 0.1
   batch_norm: True
   aug:
-    k: 5
+    k: 7
     combine: cat # cat
     norm: True
 

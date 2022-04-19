@@ -1,0 +1,31 @@
+# python run_experiments.py -c SGNN.yaml
+# python run_experiments.py -c SGNN.yaml -nc "meta.dataset_name='Flickr'"
+# python run_experiments.py -c SGNN.yaml -nc "meta.dataset_name='Flickr'" "model.feat_combine='transform'"
+
+
+meta:
+  model_name: SGNN
+  student_name: MLP
+  dataset_name: Flickr
+  n_runs: 1
+
+dataset:
+  num_features: ~
+  num_classes: ~
+
+model:
+  num_hiddens: 128
+  num_layers: 2
+  dropout: 0.5
+  batch_norm: True
+  aug_hop: 2
+  aug_path: ./examples/preprocessed/arxiv_20.feats
+  feat_combine: mean # attn mean transform jk
+
+trainer:
+  lr: 0.005
+  weight_decay: !!float 1e-4
+  epochs: 300
+  verbose: True
+  ckpt_dir: ./examples/ckpt/test_SGNN
+  gpu: 1

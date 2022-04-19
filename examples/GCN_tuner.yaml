@@ -1,0 +1,21 @@
+# python run_tuner.py -c GCN_cora.yaml -tc GCN_tuner.yaml > tmp1.out
+# python run_tuner.py -c GCN_citeseer.yaml -tc GCN_tuner.yaml > tmp1.out
+# python run_tuner.py -c GCN_pubmed.yaml -tc GCN_tuner.yaml > tmp1.out
+# python run_tuner.py -c GCN_arxiv.yaml -tc GCN_tuner.yaml > tmp1.out
+
+study_dir: ./examples/study
+version: GCN_tuner_pubmed
+
+n_trials: 50
+n_trial_runs: 1
+grid_search: False
+
+space:
+
+  # model.num_hiddens: [32, 64, 256]
+  model.num_hiddens: [32, 64, 128]
+  model.dropout: [0.3, 0.5, 0.7]
+  model.num_layers: [2, 3]
+  trainer.lr: [0.01, 0.005]
+  trainer.epochs: [50, 100, 300, 500]
+  trainer.weight_decay: [0.01, !!float 1e-3, !!float 1e-4, !!float 1e-5, 0]  

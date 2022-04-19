@@ -67,7 +67,7 @@ def extract_and_save_knowledge(ckpt_dir, dataset=None, model_name='GNN'):
         from kd.trainer import MLPTrainer
         model = MLPTrainer.build_model(cfg)
     elif model_name == 'KDMLP':
-        from kd.trainer.KDModel import KD_GAMLP
+        from kd_research.kd.trainer.KD_GAMLP import KD_GAMLP
         model = KDModelTrainer.build_model(cfg) 
     model.load_state_dict(model_state_dict)
     # extract

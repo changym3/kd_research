@@ -1,0 +1,23 @@
+# python run_tuner.py -c GAT_cora.yaml -tc GAT_tuner.yaml > tmp1.out
+# python run_tuner.py -c GAT_citeseer.yaml -tc GAT_tuner.yaml > tmp1.out
+# python run_tuner.py -c GAT_pubmed.yaml -tc GAT_tuner.yaml > tmp1.out
+# python run_tuner.py -c GAT_arxiv.yaml -tc GAT_tuner.yaml > tmp1.out
+# python run_tuner.py -c GAT_flickr.yaml -tc GAT_tuner.yaml > tmp1.out
+
+study_dir: ./examples/study
+version: GAT_tuner_flickr
+
+n_trials: 50
+n_trial_runs: 1
+grid_search: False
+
+space:
+
+  # model.num_hiddens: [32, 64, 128]
+  model.dropout: [0.3, 0.5, 0.7]
+  model.num_layers: [2, 3]
+  # trainer.epochs: [50, 100, 300, 500]
+  trainer.weight_decay: [0.01, !!float 1e-3, !!float 1e-4, !!float 1e-5, 0]
+
+  model.heads: [1, 2, 4, 8]
+  

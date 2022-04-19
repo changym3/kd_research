@@ -1,27 +1,26 @@
 # python run_experiments.py -c GCN_citeseer.yaml -nc "trainer.gpu=1"
-# Best Epoch : 95.0000 ± 38.1248
-# Best Epoch - Train: 0.9917 ± 0.0059
-# Best Epoch - Valid: 0.7288 ± 0.0023
-# Best Epoch - Test: 0.7174 ± 0.0040
+# The Prediction, Train: 0.9417, Val: 0.6900, Test: 0.6820
+
 meta:
   model_name: GCN
   dataset_name: CiteSeer
-  n_runs: 5
+  n_runs: 1
 
 dataset:
   num_features: ~
   num_classes: ~
 
 model:
-  num_hiddens: 256
+  num_hiddens: 128
   num_layers: 2
-  dropout: 0.5
+  dropout: 0.7
+  jk: last # last, cat, max, lstm,
 
 trainer:
   lr: 0.01
-  weight_decay: !!float 5e-4
+  weight_decay: 0
   epochs: 100
-  verbose: True
 
+  verbose: True
   ckpt_dir: ./examples/ckpt/test_GCN
-  gpu: 0
+  gpu: 1
